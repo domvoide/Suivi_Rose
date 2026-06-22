@@ -502,6 +502,183 @@ function fmtShortDate(iso){
   return`${day}.${month}`;
 }
 
+function StatsTab({entries}){
+  const now=new Date();
+
+  // Helpers
+  function entriesInDays(n){
+    const since=new Date(now.getTime()-n*86400000);
+    return entries.filter(e=>new Date(e.ts)>=since);
+  }
+  function byDay(n){
+    const days=[];
+    for(let i=n-1;i>=0;i--){
+      const d=new Date(now.getTime()-i*86400000);
+      const k=d.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});
+      const label=i===0?"Auj.":i===1?"Hier":d.toLocaleDateString("fr-CH",{day:"numeric",month:"numeric",timeZone:"Europe/Zurich"});
+      days.push({k,label});
+    }
+    return days;
+  }
+
+  const days7=byDay(7);
+  const e7=entriesInDays(7);
+  const e3=entriesInDays(3);
+
+  // Feeds groupés
+  function feedSessionsIn(list){return groupFeeds(list);}
+
+  // Par jour sur 7j
+  const feedsByDay=days7.map(d=>({...d,v:feedSessionsIn(entries.filter(e=>dateZH(e.ts)===d.k)).length}));
+  const wetByDay=days7.map(d=>({...d,v:entries.filter(e=>(e.cat==="diaper_wet"||e.cat==="diaper_both")&&dateZH(e.ts)===d.k).length}));
+  const pooByDay=days7.map(d=>({...d,v:entries.filter(e=>(e.cat==="diaper_poo"||e.cat==="diaper_both")&&dateZH(e.ts)===d.k).length}));
+
+  // Moyennes 7j
+  const avg=arr=>arr.length?Math.round(arr.reduce((s,x)=>s+x,0)/arr.length*10)/10:0;
+  const avgFeeds=avg(feedsByDay.map(d=>d.v));
+  const avgWet=avg(wetByDay.map(d=>d.v));
+  const avgPoo=avg(pooByDay.map(d=>d.v));
+
+  // Intervalle moyen entre tétées
+  const allFeeds=entries.filter(e=>e.cat==="feed").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const feedGaps=allFeeds.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFeeds[i].ts))/60000).filter(g=>g>20&&g<360);
+  const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
+
+  // Poids
+  const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const weightGain=weights.length>=2?(weights[weights.length-1].weight-weights[0].weight)*1000:null;
+  const daysSinceBirth=weights.length>=2?Math.round((new Date(weights[weights.length-1].ts)-new Date(weights[0].ts))/86400000):null;
+  const dailyGain=weightGain&&daysSinceBirth?Math.round(weightGain/daysSinceBirth):null;
+
+  // Nuits (22h-6h)
+  const nightFeeds=entries.filter(e=>{
+    if(e.cat!=="feed")return false;
+    const h=new Date(e.ts).toLocaleTimeString("fr-CH",{hour:"2-digit",timeZone:"Europe/Zurich"}).split(":")[0];
+    return +h>=22||+h<6;
+  });
+  const nightByDay=days7.map(d=>({...d,v:nightFeeds.filter(e=>dateZH(e.ts)===d.k).length}));
+  const avgNightFeeds=avg(nightByDay.map(d=>d.v));
+
+  // Soins compliance 7j
+  const vitDays=days7.filter(d=>entries.some(e=>e.cat==="vitamin"&&e.vitaminDone&&dateZH(e.ts)===d.k)).length;
+  const nombrilDays=days7.filter(d=>entries.some(e=>e.cat==="nombril"&&dateZH(e.ts)===d.k)).length;
+
+  // Dernières 48h vs 48h précédentes
+  const e48a=entries.filter(e=>new Date(e.ts)>=new Date(now-48*3600000)&&new Date(e.ts)<new Date(now-24*3600000));
+  const e48b=entriesInDays(1);
+  const trend=(cat,prev,curr)=>{
+    const p=prev.filter(e=>e.cat===cat).length;
+    const c=curr.filter(e=>e.cat===cat).length;
+    if(c>p)return{arrow:"↑",color:C.sage};
+    if(c<p)return{arrow:"↓",color:C.red};
+    return{arrow:"→",color:C.muted};
+  };
+  const tFeed=trend("feed",e48a,e48b);
+  const tWet=trend("diaper_wet",e48a,e48b);
+  const tPoo=trend("diaper_poo",e48a,e48b);
+
+  // Mini bar chart
+  function BarChart({data,color,max}){
+    const m=max||Math.max(...data.map(d=>d.v),1);
+    return(<div style={{display:"flex",alignItems:"flex-end",gap:4,height:60}}>
+      {data.map((d,i)=>(
+        <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+          <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v||""}</div>
+          <div style={{width:"100%",background:color,opacity:0.15+0.85*(d.v/m),borderRadius:"4px 4px 0 0",height:Math.max(d.v/m*44,d.v?4:0)}}/>
+          <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
+        </div>
+      ))}
+    </div>);
+  }
+
+  const Section=({title,children})=>(
+    <div style={{background:C.surface,borderRadius:16,padding:"16px",border:`1px solid ${C.border}`}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>{title}</div>
+      {children}
+    </div>
+  );
+
+  const KV=({label,value,sub,color})=>(
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingBottom:8,borderBottom:`1px solid ${C.border}`,marginBottom:8}}>
+      <span style={{fontSize:13,color:C.muted}}>{label}</span>
+      <span style={{fontSize:15,fontWeight:700,color:color||C.text}}>{value}{sub&&<span style={{fontSize:11,fontWeight:400,color:C.muted,marginLeft:4}}>{sub}</span>}</span>
+    </div>
+  );
+
+  return(<div style={{display:"flex",flexDirection:"column",gap:16}}>
+
+    {/* Tendances 24h */}
+    <Section title="📈 Tendances (24h vs veille)">
+      <div style={{display:"flex",gap:10}}>
+        {[["🤱","Allaitement",tFeed],["💧","Pipi",tWet],["💩","Caca",tPoo]].map(([emoji,label,t])=>(
+          <div key={label} style={{flex:1,background:C.bg,borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
+            <div style={{fontSize:22}}>{emoji}</div>
+            <div style={{fontSize:22,fontWeight:800,color:t.color}}>{t.arrow}</div>
+            <div style={{fontSize:10,color:C.muted,fontWeight:600}}>{label}</div>
+          </div>
+        ))}
+      </div>
+    </Section>
+
+    {/* Moyennes 7j */}
+    <Section title="📊 Moyennes sur 7 jours">
+      <KV label="Allaitements / jour" value={avgFeeds}/>
+      <KV label="Pipi / jour" value={avgWet}/>
+      <KV label="Caca / jour" value={avgPoo}/>
+      <KV label="Tétées nocturnes (22h-6h)" value={avgNightFeeds}/>
+      {avgGap&&<KV label="Intervalle moyen entre tétées" value={durLabel(avgGap)}/>}
+    </Section>
+
+    {/* Graphiques */}
+    <Section title="🤱 Allaitements par jour">
+      <BarChart data={feedsByDay} color={C.accent}/>
+    </Section>
+    <Section title="💧 Pipi par jour">
+      <BarChart data={wetByDay} color={C.sky}/>
+    </Section>
+    <Section title="💩 Caca par jour">
+      <BarChart data={pooByDay} color={C.golden}/>
+    </Section>
+
+    {/* Poids */}
+    {weights.length>=2&&<Section title="⚖️ Croissance">
+      <KV label="Poids initial" value={`${weights[0].weight} kg`} sub={fmtShortDate(weights[0].ts)}/>
+      <KV label="Poids actuel" value={`${weights[weights.length-1].weight} kg`} sub={fmtShortDate(weights[weights.length-1].ts)}/>
+      {weightGain!==null&&<KV label="Prise de poids totale" value={`+${weightGain} g`} color={C.sage}/>}
+      {dailyGain&&<KV label="Gain moyen / jour" value={`+${dailyGain} g`} color={dailyGain>=15&&dailyGain<=40?C.sage:C.golden}/>}
+    </Section>}
+
+    {/* Soins */}
+    <Section title="💊 Soins — 7 derniers jours">
+      <KV label="Vitamines données" value={`${vitDays}/7 jours`} color={vitDays>=6?C.sage:vitDays>=4?C.golden:C.red}/>
+      <KV label="Nombril désinfecté" value={`${nombrilDays}/7 jours`} color={nombrilDays>=6?C.sage:nombrilDays>=4?C.golden:C.red}/>
+    </Section>
+
+    {/* Faits marquants */}
+    <Section title="✨ Faits marquants">
+      {weightGain!==null&&<div style={{background:C.sageLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.sage,marginBottom:8}}>
+        ⚖️ Rose a pris <strong>{weightGain} g</strong> depuis sa naissance{dailyGain?` (${dailyGain} g/jour)`:""}
+      </div>}
+      {avgGap&&<div style={{background:C.accentLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.accent,marginBottom:8}}>
+        🤱 Elle se nourrit en moyenne toutes les <strong>{durLabel(avgGap)}</strong>
+      </div>}
+      {avgNightFeeds>0&&<div style={{background:C.lavenderLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.lavender,marginBottom:8}}>
+        🌙 <strong>{avgNightFeeds}</strong> tétée{avgNightFeeds>1?"s":""} nocturne{avgNightFeeds>1?"s":""} par nuit en moyenne
+      </div>}
+      {vitDays<7&&<div style={{background:C.redLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.red,marginBottom:8}}>
+        💊 Vitamines oubliées <strong>{7-vitDays} jour{7-vitDays>1?"s":""}</strong> cette semaine
+      </div>}
+      {avgPoo<1&&<div style={{background:C.goldenLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.golden,marginBottom:8}}>
+        💩 Moins d'un caca par jour en moyenne — à surveiller
+      </div>}
+      {avgPoo>=3&&<div style={{background:C.goldenLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.golden,marginBottom:8}}>
+        💩 <strong>{avgPoo}</strong> cacas par jour — fréquence élevée, normal chez le nourrisson
+      </div>}
+    </Section>
+
+  </div>);
+}
+
 function WeightChart({entries}){
   const ws=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
   if(ws.length<2)return<div style={{color:C.muted,textAlign:"center",padding:"40px 0"}}>Ajoutez au moins 2 pesées.</div>;
@@ -704,12 +881,13 @@ function App(){
         </div>)}
       </div>)}
       {tab==="journal"&&<Journal entries={data.entries} onDelete={deleteEntry} onEdit={openEdit}/>}
+      {tab==="stats"&&<StatsTab entries={data.entries}/>}
       {tab==="weight"&&<WeightChart entries={data.entries}/>}
       {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
     </div>
 
     <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0 20px",zIndex:50}}>
-      {[["home","🏠","Accueil"],["journal","📋","Journal"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].map(([t,emoji,label])=>(
+      {[["home","🏠","Accueil"],["journal","📋","Journal"],["stats","📊","Stats"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].map(([t,emoji,label])=>(
         <button key={t} onClick={()=>setTab(t)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===t?C.accent:C.muted,fontWeight:tab===t?700:400,fontSize:11}}>
           <span style={{fontSize:22}}>{emoji}</span>{label}
         </button>
