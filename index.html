@@ -6,12 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Suivi Rose"/>
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%23F8E8EE'/%3E%3Ctext x='90' y='125' font-size='110' text-anchor='middle' font-family='serif'%3E%F0%9F%8C%B9%3C/text%3E%3C/svg%3E"/>
-<style>
-  #splash{position:fixed;inset:0;background:#FBF7F4;display:flex;align-items:center;justify-content:center;z-index:9999;}
-  #splash svg{width:120px;height:120px;}
-</style>
 <title>Suivi Rose 🌸</title>
+<link rel="apple-touch-icon" href="https://domvoide.github.io/Suivi_Rose/icon.png"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -33,21 +29,27 @@ const FB_KEY = "AIzaSyB1E5I3oN9MHcs0kaT3xv-4iaR_Hv86lhw";
 async function fbRead(){try{const r=await fetch(`${FB_PATH}?auth=${FB_KEY}`);if(!r.ok)return null;return await r.json();}catch{return null;}}
 async function fbWrite(d){try{await fetch(`${FB_PATH}?auth=${FB_KEY}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});}catch{}}
 
+// ─── Heure locale : TOUJOURS utiliser les méthodes locales du navigateur ─────
+function pad(n){return String(n).padStart(2,"0");}
+
+// Heure locale actuelle pour datetime-local input
 function localNow(){
-  const n=new Date();
-  const off=n.getTimezoneOffset();
-  return new Date(n.getTime()-off*60000).toISOString().slice(0,16);
-}
-function localHoursBefore(h){
-  const n=new Date();
-  const off=n.getTimezoneOffset();
-  return new Date(n.getTime()-off*60000-h*3600000).toISOString().slice(0,16);
-}
-function isoToLocal(iso){
-  // Convertit un timestamp UTC ISO en heure locale pour l'input datetime-local
-  const d=new Date(iso);
-  const pad=n=>String(n).padStart(2,"0");
+  const d=new Date();
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+// Heure locale il y a N heures
+function localHoursBefore(h){
+  const d=new Date(Date.now()-h*3600000);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+// UTC ISO → heure locale pour les inputs (PAS de calcul d'offset manuel)
+function isoToLocal(iso){
+  const d=new Date(iso);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+// datetime-local string → UTC ISO (le navigateur fait la conversion)
+function localToIso(localStr){
+  return new Date(localStr).toISOString();
 }
 
 const C={
@@ -57,7 +59,6 @@ const C={
   red:"#C95A5A",redLight:"#FFD9D9",text:"#2D2118",muted:"#7A6A5A",border:"#E8DDD4",
   teal:"#5A9E9B",tealLight:"#D6ECEA",
 };
-
 const CATS={
   feed:        {label:"Allaitement", emoji:"🤱",color:C.accent,  bg:C.accentLight},
   diaper_wet:  {label:"Pipi",        emoji:"💧",color:C.sky,     bg:C.skyLight},
@@ -73,149 +74,13 @@ const CATS={
   mood:        {label:"Humeur",      emoji:"😊",color:C.sage,    bg:C.sageLight},
   note:        {label:"Note",        emoji:"📝",color:C.muted,   bg:"#EEEEEE"},
 };
-
 const MOODS=["😴","😊","😢","😤","😌","🤔"];
 const POO_COLORS=["Jaune moutarde","Vert","Brun","Orange","Noir"];
 const POO_TEX=["Liquide","Mou","Normal","Granuleux"];
 
-const PRELOAD=[
-  {id:100,cat:"diaper_wet",ts:"2026-06-17T21:10:00Z",note:"pipi + règle",author:"carnet"},
-  {id:101,cat:"diaper_poo",ts:"2026-06-18T03:45:00Z",author:"carnet"},
-  {id:102,cat:"feed",side:"Gauche",ts:"2026-06-18T03:55:00Z",author:"carnet"},
-  {id:103,cat:"feed",side:"Droit",ts:"2026-06-18T04:24:00Z",author:"carnet"},
-  {id:104,cat:"feed",side:"Droit",ts:"2026-06-18T04:45:00Z",duration:25,note:"gouttes + reprise sein droit",author:"carnet"},
-  {id:105,cat:"vitamin",vitaminDone:true,ts:"2026-06-18T04:45:00Z",author:"carnet"},
-  {id:106,cat:"feed",side:"Droit",ts:"2026-06-18T06:13:00Z",author:"carnet"},
-  {id:107,cat:"feed",side:"Gauche",ts:"2026-06-18T06:38:00Z",duration:22,author:"carnet"},
-  {id:108,cat:"diaper_wet",ts:"2026-06-18T07:00:00Z",author:"carnet"},
-  {id:109,cat:"diaper_poo",ts:"2026-06-18T07:00:00Z",author:"carnet"},
-  {id:110,cat:"diaper_poo",ts:"2026-06-18T07:35:00Z",author:"carnet"},
-  {id:111,cat:"diaper_wet",ts:"2026-06-18T08:58:00Z",author:"carnet"},
-  {id:112,cat:"diaper_poo",ts:"2026-06-18T08:58:00Z",author:"carnet"},
-  {id:113,cat:"feed",side:"Droit",ts:"2026-06-18T08:58:00Z",author:"carnet"},
-  {id:114,cat:"feed",side:"Gauche",ts:"2026-06-18T09:20:00Z",duration:15,author:"carnet"},
-  {id:115,cat:"feed",side:"Gauche",ts:"2026-06-18T10:00:00Z",author:"carnet"},
-  {id:116,cat:"feed",side:"Droit",ts:"2026-06-18T10:35:00Z",duration:25,author:"carnet"},
-  {id:117,cat:"diaper_poo",ts:"2026-06-18T13:00:00Z",author:"carnet"},
-  {id:118,cat:"feed",side:"Droit",ts:"2026-06-18T13:34:00Z",duration:16,author:"carnet"},
-  {id:119,cat:"diaper_wet",ts:"2026-06-18T14:50:00Z",author:"carnet"},
-  {id:120,cat:"feed",side:"Gauche",ts:"2026-06-18T15:00:00Z",author:"carnet"},
-  {id:121,cat:"feed",side:"Droit",ts:"2026-06-18T15:30:00Z",duration:15,author:"carnet"},
-  {id:122,cat:"diaper_poo",ts:"2026-06-18T15:49:00Z",author:"carnet"},
-  {id:123,cat:"diaper_wet",ts:"2026-06-18T16:15:00Z",author:"carnet"},
-  {id:200,cat:"diaper_wet",ts:"2026-06-18T19:25:00Z",author:"carnet"},
-  {id:201,cat:"diaper_poo",ts:"2026-06-18T19:25:00Z",author:"carnet"},
-  {id:202,cat:"feed",side:"Les deux",ts:"2026-06-18T20:00:00Z",author:"carnet"},
-  {id:203,cat:"feed",side:"Gauche",ts:"2026-06-18T20:40:00Z",author:"carnet"},
-  {id:204,cat:"feed",side:"Droit",ts:"2026-06-18T20:55:00Z",author:"carnet"},
-  {id:205,cat:"diaper_wet",ts:"2026-06-18T21:50:00Z",author:"carnet"},
-  {id:206,cat:"diaper_poo",ts:"2026-06-18T21:50:00Z",author:"carnet"},
-  {id:300,cat:"feed",side:"Gauche",ts:"2026-06-19T03:50:00Z",note:"1er réveil",author:"carnet"},
-  {id:301,cat:"diaper_wet",ts:"2026-06-19T04:10:00Z",author:"carnet"},
-  {id:302,cat:"diaper_poo",ts:"2026-06-19T04:10:00Z",author:"carnet"},
-  {id:303,cat:"vitamin",vitaminDone:true,ts:"2026-06-19T04:45:00Z",note:"nombril",author:"carnet"},
-  {id:304,cat:"diaper_wet",ts:"2026-06-19T07:30:00Z",author:"carnet"},
-  {id:305,cat:"diaper_poo",ts:"2026-06-19T07:30:00Z",author:"carnet"},
-  {id:306,cat:"feed",side:"Droit",ts:"2026-06-19T07:40:00Z",duration:25,author:"carnet"},
-  {id:307,cat:"feed",side:"Gauche",ts:"2026-06-19T08:25:00Z",duration:15,author:"carnet"},
-  {id:308,cat:"feed",side:"Droit",ts:"2026-06-19T10:07:00Z",note:"assise → top → dodo",author:"carnet"},
-  {id:309,cat:"diaper_wet",ts:"2026-06-19T11:00:00Z",author:"carnet"},
-  {id:310,cat:"diaper_poo",ts:"2026-06-19T11:00:00Z",author:"carnet"},
-  {id:311,cat:"diaper_wet",ts:"2026-06-19T12:30:00Z",author:"carnet"},
-  {id:312,cat:"diaper_poo",ts:"2026-06-19T12:30:00Z",author:"carnet"},
-  {id:313,cat:"feed",side:"Gauche",ts:"2026-06-19T12:45:00Z",author:"carnet"},
-  {id:314,cat:"weight",weight:3.35,ts:"2026-06-19T12:45:00Z",author:"carnet"},
-  {id:315,cat:"bath",ts:"2026-06-19T13:30:00Z",note:"bain emmayoté",author:"carnet"},
-  {id:316,cat:"feed",side:"Droit",ts:"2026-06-19T13:45:00Z",author:"carnet"},
-  {id:317,cat:"feed",side:"Gauche",ts:"2026-06-19T16:30:00Z",author:"carnet"},
-  {id:318,cat:"feed",side:"Droit",ts:"2026-06-19T16:48:00Z",author:"carnet"},
-  {id:319,cat:"diaper_wet",ts:"2026-06-19T18:00:00Z",author:"carnet"},
-  {id:410,cat:"feed",side:"Gauche",ts:"2026-06-19T22:39:00Z",author:"carnet"},
-  {id:411,cat:"feed",side:"Droit",ts:"2026-06-19T23:00:00Z",author:"carnet"},
-  {id:412,cat:"diaper_wet",ts:"2026-06-20T03:50:00Z",author:"carnet"},
-  {id:413,cat:"feed",side:"Gauche",ts:"2026-06-20T03:56:00Z",author:"carnet"},
-  {id:414,cat:"feed",side:"Droit",ts:"2026-06-20T04:13:00Z",author:"carnet"},
-  {id:415,cat:"diaper_wet",ts:"2026-06-20T05:00:00Z",author:"carnet"},
-  {id:416,cat:"feed",side:"Gauche",ts:"2026-06-20T05:13:00Z",author:"carnet"},
-  {id:417,cat:"feed",side:"Droit",ts:"2026-06-20T05:25:00Z",author:"carnet"},
-  {id:418,cat:"feed",side:"Gauche",ts:"2026-06-20T09:25:00Z",author:"carnet"},
-  {id:419,cat:"diaper_wet",ts:"2026-06-20T09:40:00Z",author:"carnet"},
-  {id:420,cat:"diaper_poo",ts:"2026-06-20T09:40:00Z",author:"carnet"},
-  {id:421,cat:"vitamin",vitaminDone:true,ts:"2026-06-20T09:40:00Z",note:"nombril",author:"carnet"},
-  {id:422,cat:"feed",side:"Droit",ts:"2026-06-20T09:47:00Z",author:"carnet"},
-  {id:423,cat:"diaper_wet",ts:"2026-06-20T11:40:00Z",author:"carnet"},
-  {id:424,cat:"diaper_poo",ts:"2026-06-20T11:40:00Z",author:"carnet"},
-  {id:425,cat:"feed",side:"Droit",ts:"2026-06-20T12:00:00Z",author:"carnet"},
-  {id:426,cat:"feed",side:"Gauche",ts:"2026-06-20T12:15:00Z",author:"carnet"},
-  {id:427,cat:"diaper_wet",ts:"2026-06-20T13:43:00Z",author:"carnet"},
-  {id:428,cat:"diaper_poo",ts:"2026-06-20T13:43:00Z",author:"carnet"},
-  {id:429,cat:"diaper_poo",ts:"2026-06-20T15:20:00Z",author:"carnet"},
-  {id:430,cat:"feed",side:"Gauche",ts:"2026-06-20T15:24:00Z",author:"carnet"},
-  {id:431,cat:"feed",side:"Droit",ts:"2026-06-20T15:45:00Z",author:"carnet"},
-  {id:432,cat:"feed",side:"Droit",ts:"2026-06-20T15:56:00Z",author:"carnet"},
-  {id:433,cat:"diaper_wet",ts:"2026-06-20T16:00:00Z",author:"carnet"},
-  {id:434,cat:"diaper_poo",ts:"2026-06-20T16:00:00Z",author:"carnet"},
-  {id:435,cat:"feed",side:"Droit",ts:"2026-06-20T16:20:00Z",author:"carnet"},
-  {id:436,cat:"diaper_wet",ts:"2026-06-20T16:50:00Z",author:"carnet"},
-  {id:437,cat:"diaper_poo",ts:"2026-06-20T16:50:00Z",author:"carnet"},
-  {id:438,cat:"diaper_wet",ts:"2026-06-20T19:30:00Z",author:"carnet"},
-  {id:439,cat:"diaper_poo",ts:"2026-06-20T19:30:00Z",author:"carnet"},
-  {id:440,cat:"feed",side:"Gauche",ts:"2026-06-20T19:50:00Z",author:"carnet"},
-  {id:441,cat:"feed",side:"Droit",ts:"2026-06-20T20:07:00Z",author:"carnet"},
-  {id:442,cat:"diaper_poo",ts:"2026-06-20T20:55:00Z",author:"carnet"},
-  {id:443,cat:"feed",side:"Gauche",ts:"2026-06-20T21:00:00Z",author:"carnet"},
-  {id:444,cat:"diaper_wet",ts:"2026-06-20T21:30:00Z",author:"carnet"},
-  {id:445,cat:"diaper_poo",ts:"2026-06-20T21:30:00Z",author:"carnet"},
-  {id:500,cat:"note",ts:"2026-06-20T23:00:00Z",note:"Difficulté à s'endormir → 01h30. Sérum physio dans le nez a aidé.",author:"carnet"},
-  {id:501,cat:"feed",side:"Gauche",ts:"2026-06-21T04:50:00Z",author:"carnet"},
-  {id:502,cat:"feed",side:"Droit",ts:"2026-06-21T05:00:00Z",author:"carnet"},
-  {id:503,cat:"diaper_wet",ts:"2026-06-21T05:50:00Z",author:"carnet"},
-  {id:504,cat:"diaper_poo",ts:"2026-06-21T05:50:00Z",author:"carnet"},
-  {id:505,cat:"feed",side:"Droit",ts:"2026-06-21T05:55:00Z",author:"carnet"},
-  {id:506,cat:"diaper_wet",ts:"2026-06-21T07:30:00Z",author:"carnet"},
-  {id:507,cat:"diaper_poo",ts:"2026-06-21T07:30:00Z",author:"carnet"},
-  {id:508,cat:"vitamin",vitaminDone:true,ts:"2026-06-21T07:30:00Z",author:"carnet"},
-  {id:509,cat:"feed",side:"Gauche",ts:"2026-06-21T09:00:00Z",author:"carnet"},
-  {id:510,cat:"diaper_wet",ts:"2026-06-21T09:40:00Z",author:"carnet"},
-  {id:511,cat:"diaper_poo",ts:"2026-06-21T09:40:00Z",author:"carnet"},
-  {id:512,cat:"feed",side:"Droit",ts:"2026-06-21T09:45:00Z",author:"carnet"},
-  {id:513,cat:"feed",side:"Gauche",ts:"2026-06-21T09:50:00Z",author:"carnet"},
-  {id:514,cat:"diaper_wet",ts:"2026-06-21T11:00:00Z",author:"carnet"},
-  {id:515,cat:"feed",side:"Gauche",ts:"2026-06-21T11:38:00Z",author:"carnet"},
-  {id:516,cat:"feed",side:"Droit",ts:"2026-06-21T12:11:00Z",author:"carnet"},
-  {id:517,cat:"diaper_wet",ts:"2026-06-21T15:15:00Z",author:"carnet"},
-  {id:518,cat:"diaper_poo",ts:"2026-06-21T15:15:00Z",author:"carnet"},
-  {id:519,cat:"feed",side:"Les deux",ts:"2026-06-21T15:30:00Z",duration:60,note:"allaitement Hazot",author:"carnet"},
-  {id:520,cat:"diaper_wet",ts:"2026-06-21T18:30:00Z",author:"carnet"},
-  {id:521,cat:"feed",side:"Gauche",ts:"2026-06-21T18:30:00Z",author:"carnet"},
-  {id:522,cat:"feed",side:"Droit",ts:"2026-06-21T18:55:00Z",author:"carnet"},
-  {id:523,cat:"feed",side:"Gauche",ts:"2026-06-21T19:12:00Z",author:"carnet"},
-  {id:524,cat:"feed",side:"Droit",ts:"2026-06-21T19:58:00Z",duration:14,author:"carnet"},
-  {id:525,cat:"feed",side:"Gauche",ts:"2026-06-21T20:36:00Z",duration:24,author:"carnet"},
-  {id:600,cat:"diaper_wet",ts:"2026-06-22T03:30:00Z",author:"carnet"},
-  {id:601,cat:"diaper_poo",ts:"2026-06-22T03:30:00Z",author:"carnet"},
-  {id:602,cat:"feed",side:"Gauche",ts:"2026-06-22T04:00:00Z",author:"carnet"},
-  {id:603,cat:"feed",side:"Droit",ts:"2026-06-22T04:24:00Z",author:"carnet"},
-  {id:604,cat:"feed",side:"Gauche",ts:"2026-06-22T04:45:00Z",author:"carnet"},
-  {id:605,cat:"diaper_wet",ts:"2026-06-22T05:05:00Z",author:"carnet"},
-  {id:606,cat:"diaper_poo",ts:"2026-06-22T05:05:00Z",author:"carnet"},
-  {id:607,cat:"diaper_wet",ts:"2026-06-22T06:50:00Z",author:"carnet"},
-  {id:608,cat:"diaper_poo",ts:"2026-06-22T06:50:00Z",author:"carnet"},
-  {id:609,cat:"vitamin",vitaminDone:true,ts:"2026-06-22T06:50:00Z",note:"nombril",author:"carnet"},
-  {id:610,cat:"feed",side:"Gauche",ts:"2026-06-22T07:00:00Z",author:"carnet"},
-  {id:611,cat:"feed",side:"Droit",ts:"2026-06-22T07:15:00Z",author:"carnet"},
-  {id:612,cat:"feed",side:"Gauche",ts:"2026-06-22T07:30:00Z",author:"carnet"},
-  {id:613,cat:"diaper_wet",ts:"2026-06-22T08:05:00Z",author:"carnet"},
-  {id:614,cat:"diaper_poo",ts:"2026-06-22T08:05:00Z",author:"carnet"},
-  {id:615,cat:"weight",weight:3.40,ts:"2026-06-22T08:05:00Z",author:"carnet"},
-  {id:616,cat:"feed",side:"Droit",ts:"2026-06-22T09:25:00Z",author:"carnet"},
-  {id:617,cat:"feed",side:"Gauche",ts:"2026-06-22T09:50:00Z",author:"carnet"},
-  {id:618,cat:"diaper_wet",ts:"2026-06-22T09:47:00Z",author:"carnet"},
-  {id:619,cat:"diaper_poo",ts:"2026-06-22T09:47:00Z",author:"carnet"},
-];
+const DEFAULT={babyName:"Rose",birthDate:"2026-06-15",entries:[]};
 
-const DEFAULT={babyName:"Rose",birthDate:"2026-06-15",entries:PRELOAD};
-
+// ─── Utils ────────────────────────────────────────────────────────────────────
 function fmtTime(iso){return new Date(iso).toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});}
 function fmtDate(iso){
   const d=new Date(iso),now=new Date();
@@ -225,37 +90,19 @@ function fmtDate(iso){
   if(ds===ns)return"Aujourd'hui";if(ds===ys)return"Hier";
   return d.toLocaleDateString("fr-CH",{weekday:"short",day:"numeric",month:"short",timeZone:"Europe/Zurich"});
 }
-function durLabel(m){if(!m)return"";return m<60?`${m} min`:`${Math.floor(m/60)}h${String(m%60).padStart(2,"0")}`;}
+function fmtShortDate(iso){
+  const d=new Date(iso);
+  return `${pad(d.toLocaleDateString("fr-CH",{day:"numeric",timeZone:"Europe/Zurich"}).replace(/\D/g,""))}.${pad(d.toLocaleDateString("fr-CH",{month:"numeric",timeZone:"Europe/Zurich"}).replace(/\D/g,""))}`;
+}
+function durLabel(m){if(!m)return"";return m<60?`${m} min`:`${Math.floor(m/60)}h${pad(m%60)}`;}
 function timeAgo(iso){
   const m=Math.round((Date.now()-new Date(iso))/60000);
   if(m<1)return"à l'instant";if(m<60)return`il y a ${m} min`;
   const h=Math.floor(m/60),rm=m%60;
-  return rm>0?`il y a ${h}h${String(rm).padStart(2,"0")}`:`il y a ${h}h`;
+  return rm>0?`il y a ${h}h${pad(rm)}`:`il y a ${h}h`;
 }
 function dateZH(iso){return new Date(iso).toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});}
 function todayZH(){return new Date().toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});}
-
-// Groupe les tétées G+D successives (< 30min) en une seule session
-function groupFeeds(entries){
-  const feeds=[...entries].filter(e=>e.cat==="feed").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  const sessions=[];
-  let i=0;
-  while(i<feeds.length){
-    const cur=feeds[i];
-    if(i+1<feeds.length){
-      const next=feeds[i+1];
-      const diffMin=(new Date(next.ts)-new Date(cur.ts))/60000;
-      const sides=new Set([cur.side,next.side]);
-      if(diffMin<=30&&sides.has("Gauche")&&sides.has("Droit")){
-        sessions.push({...cur,side:"Les deux",_merged:true,_end:next.ts});
-        i+=2;continue;
-      }
-    }
-    sessions.push(cur);i++;
-  }
-  return sessions;
-}
-
 function groupByDay(entries){
   const g={};
   [...entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).forEach(e=>{
@@ -263,16 +110,30 @@ function groupByDay(entries){
   });
   return g;
 }
-
-// Check soins du matin (vitamines + nombril)
+function groupFeeds(list){
+  const feeds=[...list].filter(e=>e.cat==="feed").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const sessions=[];let i=0;
+  while(i<feeds.length){
+    const cur=feeds[i];
+    if(i+1<feeds.length){
+      const nxt=feeds[i+1];
+      const diff=(new Date(nxt.ts)-new Date(cur.ts))/60000;
+      const sides=new Set([cur.side,nxt.side]);
+      if(diff<=30&&sides.has("Gauche")&&sides.has("Droit")){
+        sessions.push({...cur,side:"Les deux",_merged:true});i+=2;continue;
+      }
+    }
+    sessions.push(cur);i++;
+  }
+  return sessions;
+}
 function checkMorningSoins(entries){
   const today=todayZH();
-  const todayE=entries.filter(e=>dateZH(e.ts)===today);
-  const vitDone=todayE.some(e=>e.cat==="vitamin"&&e.vitaminDone);
-  const nombrilDone=todayE.some(e=>e.cat==="nombril");
-  return{vitDone,nombrilDone};
+  const te=entries.filter(e=>dateZH(e.ts)===today);
+  return{vitDone:te.some(e=>e.cat==="vitamin"&&e.vitaminDone),nombrilDone:te.some(e=>e.cat==="nombril")};
 }
 
+// ─── UI atoms ─────────────────────────────────────────────────────────────────
 const Btn=({color,children,onClick,style={}})=>(
   <button onClick={onClick} style={{background:color,color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontWeight:700,fontSize:15,cursor:"pointer",...style}}>{children}</button>
 );
@@ -280,32 +141,31 @@ const iSt={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 12px",f
 const Inp=({label,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><input {...p} style={iSt}/></label>);
 const Sel=({label,children,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><select {...p} style={iSt}>{children}</select></label>);
 
-// ─── Formulaires ──────────────────────────────────────────────────────────────
+// ─── Formulaires — heure toujours via isoToLocal / localNow ──────────────────
 function FeedForm({onSave,initial}){
   const[side,setSide]=useState(initial?.side||"Gauche");
   const[dur,setDur]=useState(initial?.duration||"");
   const[qty,setQty]=useState(initial?.quantity||"");
   const[note,setNote]=useState(initial?.note||"");
-  const[ts,setTs]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow());
+  const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Sel label="Sein" value={side} onChange={e=>setSide(e.target.value)}><option>Gauche</option><option>Droit</option><option>Les deux</option><option>Biberon</option></Sel>
     <Inp label="Durée (min)" type="number" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
     <Inp label="Quantité ml (biberon)" type="number" min="0" value={qty} onChange={e=>setQty(e.target.value)} placeholder="optionnel"/>
     <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={C.accent} onClick={()=>onSave({cat:"feed",side,duration:dur?+dur:null,quantity:qty?+qty:null,note:note||undefined,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
+    <Btn color={C.accent} onClick={()=>onSave({cat:"feed",side,duration:dur?+dur:null,quantity:qty?+qty:null,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 function DiaperForm({type,onSave,initial}){
-  const initTs=initial?isoToLocal(initial.ts):localNow();
-  const[ts,setTs]=useState(initTs);
+  const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   const[pc,setPc]=useState(initial?.pooColor||POO_COLORS[0]);
   const[pt,setPt]=useState(initial?.pooTex||POO_TEX[0]);
   const isPoo=type==="diaper_poo"||type==="diaper_both";
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     {isPoo&&<><Sel label="Couleur" value={pc} onChange={e=>setPc(e.target.value)}>{POO_COLORS.map(c=><option key={c}>{c}</option>)}</Sel><Sel label="Texture" value={pt} onChange={e=>setPt(e.target.value)}>{POO_TEX.map(t=><option key={t}>{t}</option>)}</Sel></>}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={isPoo?C.golden:C.sky} onClick={()=>onSave({cat:type,pooColor:isPoo?pc:undefined,pooTex:isPoo?pt:undefined,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
+    <Btn color={isPoo?C.golden:C.sky} onClick={()=>onSave({cat:type,pooColor:isPoo?pc:undefined,pooTex:isPoo?pt:undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 function SleepForm({onSave,initial}){
@@ -316,7 +176,7 @@ function SleepForm({onSave,initial}){
     <Inp label="Début" type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/>
     <Inp label="Fin" type="datetime-local" value={end} onChange={e=>setEnd(e.target.value)}/>
     {dur>0&&<div style={{fontSize:13,color:C.lavender,fontWeight:600}}>Durée : {durLabel(dur)}</div>}
-    <Btn color={C.lavender} onClick={()=>onSave({cat:"sleep",duration:dur,ts:new Date(start).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
+    <Btn color={C.lavender} onClick={()=>onSave({cat:"sleep",duration:dur,ts:localToIso(start)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 function WeightForm({onSave,initial}){
@@ -325,7 +185,7 @@ function WeightForm({onSave,initial}){
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Inp label="Poids (kg)" type="number" step="0.001" min="0" value={w} onChange={e=>setW(e.target.value)} placeholder="ex: 3.400"/>
     <Inp label="Date/heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={C.sage} onClick={()=>w&&onSave({cat:"weight",weight:+w,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
+    <Btn color={C.sage} onClick={()=>w&&onSave({cat:"weight",weight:+w,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 function TempForm({onSave,initial}){
@@ -335,7 +195,7 @@ function TempForm({onSave,initial}){
     <Inp label="Température (°C)" type="number" step="0.1" min="35" max="42" value={t} onChange={e=>setT(e.target.value)} placeholder="ex: 37.2"/>
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     {t&&+t>38&&<div style={{background:C.redLight,borderRadius:10,padding:"8px 12px",fontSize:13,color:C.red,fontWeight:600}}>⚠️ Fièvre — consultez votre pédiatre</div>}
-    <Btn color={C.red} onClick={()=>t&&onSave({cat:"temperature",temp:+t,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
+    <Btn color={C.red} onClick={()=>t&&onSave({cat:"temperature",temp:+t,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 function SimpleForm({cat,color,onSave,initial}){
@@ -346,52 +206,11 @@ function SimpleForm({cat,color,onSave,initial}){
     {cat==="mood"&&(<div><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Humeur</div><div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{MOODS.map(m=><button key={m} onClick={()=>setMood(m)} style={{fontSize:28,background:mood===m?C.sageLight:"none",border:`2px solid ${mood===m?C.sage:C.border}`,borderRadius:12,padding:"4px 8px",cursor:"pointer"}}>{m}</button>)}</div></div>)}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     <Inp label="Note (optionnel)" value={note} onChange={e=>setNote(e.target.value)} placeholder="..."/>
-    <Btn color={color} onClick={()=>onSave({cat,mood:cat==="mood"?mood:undefined,note:note||undefined,vitaminDone:cat==="vitamin"?true:undefined,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
+    <Btn color={color} onClick={()=>onSave({cat,mood:cat==="mood"?mood:undefined,note:note||undefined,vitaminDone:cat==="vitamin"?true:undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 
-function ImportForm({onImport}){
-  const[date,setDate]=useState(localNow().slice(0,10));
-  const[rows,setRows]=useState([{time:"",type:"feed",side:"Gauche",note:""}]);
-  function addRow(){setRows(r=>[...r,{time:"",type:"feed",side:"Gauche",note:""}]);}
-  function removeRow(i){setRows(r=>r.filter((_,j)=>j!==i));}
-  function upd(i,k,v){setRows(r=>r.map((row,j)=>j===i?{...row,[k]:v}:row));}
-  function doImport(){
-    const entries=[];
-    rows.forEach((row,i)=>{
-      if(!row.time)return;
-      const ts=new Date(`${date}T${row.time}:00+02:00`).toISOString();
-      const id=Date.now()+i+Math.random();
-      if(row.type==="feed")entries.push({id,cat:"feed",side:row.side,note:row.note||undefined,ts,author:"carnet"});
-      else if(row.type==="pipi")entries.push({id,cat:"diaper_wet",ts,author:"carnet"});
-      else if(row.type==="caca")entries.push({id,cat:"diaper_poo",ts,author:"carnet"});
-      else if(row.type==="pipi+caca"){entries.push({id:id+0.1,cat:"diaper_wet",ts,author:"carnet"});entries.push({id:id+0.2,cat:"diaper_poo",ts,author:"carnet"});}
-      else if(row.type==="vitamine")entries.push({id,cat:"vitamin",vitaminDone:true,note:row.note||undefined,ts,author:"carnet"});
-      else if(row.type==="nombril")entries.push({id,cat:"nombril",ts,author:"carnet"});
-      else if(row.type==="nez")entries.push({id,cat:"nez",ts,author:"carnet"});
-      else if(row.type==="poids"){const w=parseFloat(row.note);if(!isNaN(w))entries.push({id,cat:"weight",weight:w,ts,author:"carnet"});}
-      else if(row.type==="note")entries.push({id,cat:"note",note:row.note||"",ts,author:"carnet"});
-    });
-    if(entries.length>0){onImport(entries);setRows([{time:"",type:"feed",side:"Gauche",note:""}]);}
-  }
-  const types=[["feed","🤱 Allaitement"],["pipi","💧 Pipi"],["caca","💩 Caca"],["pipi+caca","💧💩 Pipi+Caca"],["vitamine","💊 Vitamine"],["nombril","🌀 Nombril"],["nez","👃 Rinçage nez"],["poids","⚖️ Poids (kg)"],["note","📝 Note"]];
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    <Inp label="Date" type="date" value={date} onChange={e=>setDate(e.target.value)}/>
-    {rows.map((row,i)=>(<div key={i} style={{background:C.bg,borderRadius:12,padding:12,border:`1px solid ${C.border}`,display:"flex",flexDirection:"column",gap:8}}>
-      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <input type="time" value={row.time} onChange={e=>upd(i,"time",e.target.value)} style={{...iSt,width:110,flexShrink:0}}/>
-        <select value={row.type} onChange={e=>upd(i,"type",e.target.value)} style={{...iSt,flex:1}}>{types.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
-        <button onClick={()=>removeRow(i)} style={{background:"none",border:"none",fontSize:20,color:C.muted,cursor:"pointer",flexShrink:0}}>×</button>
-      </div>
-      {row.type==="feed"&&<select value={row.side} onChange={e=>upd(i,"side",e.target.value)} style={iSt}><option>Gauche</option><option>Droit</option><option>Les deux</option><option>Biberon</option></select>}
-      {(row.type==="poids"||row.type==="note")&&<input value={row.note} onChange={e=>upd(i,"note",e.target.value)} placeholder={row.type==="poids"?"ex: 3.400":"remarque..."} style={iSt}/>}
-    </div>))}
-    <button onClick={addRow} style={{background:"none",border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"10px",color:C.muted,fontWeight:600,cursor:"pointer",fontSize:14}}>+ Ajouter une ligne</button>
-    <Btn color={C.accent} onClick={doImport}>Importer {rows.filter(r=>r.time).length} entrée(s)</Btn>
-  </div>);
-}
-
-// ─── EntryCard avec édition ───────────────────────────────────────────────────
+// ─── EntryCard ────────────────────────────────────────────────────────────────
 function EntryCard({entry,onDelete,onEdit}){
   const cat=CATS[entry.cat]||CATS.note;
   const[confirm,setConfirm]=useState(false);
@@ -428,26 +247,28 @@ function EntryCard({entry,onDelete,onEdit}){
   </div>);
 }
 
-// ─── Stats + dernières entrées ────────────────────────────────────────────────
+// ─── TodayStats — se rafraîchit toutes les 5 minutes ─────────────────────────
 function TodayStats({entries}){
+  const[,setTick]=useState(0);
+  useEffect(()=>{
+    function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>document.removeEventListener("visibilitychange",onVisible);
+  },[]);
+
   const now=new Date();
   const since=new Date(now.getTime()-24*3600000);
   const te=entries.filter(e=>new Date(e.ts)>=since);
-
-  // Allaitement : grouper G+D successifs
   const feedSessions=groupFeeds(te);
   const feedMin=feedSessions.reduce((s,e)=>s+(e.duration||0),0);
   const wet=te.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").length;
   const poo=te.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").length;
   const sleepMin=te.filter(e=>e.cat==="sleep").reduce((s,e)=>s+(e.duration||0),0);
   const lastW=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
-
-  // Dernières entrées par type
   const lastFeed=entries.filter(e=>e.cat==="feed").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const lastWet=entries.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const lastPoo=entries.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
-
-  const {vitDone,nombrilDone}=checkMorningSoins(entries);
+  const{vitDone,nombrilDone}=checkMorningSoins(entries);
   const heure=now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});
 
   const SC=({emoji,label,value,sub,color,bg})=>(
@@ -458,14 +279,11 @@ function TodayStats({entries}){
       {sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}
     </div>
   );
-
   return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
     <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>Dernières 24h</div>
       <div style={{fontSize:13,fontWeight:600,color:C.accent}}>🕐 {heure}</div>
     </div>
-
-    {/* Check soins matin */}
     <div style={{display:"flex",gap:8}}>
       <div style={{flex:1,background:vitDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:vitDone?C.sage:C.red,textAlign:"center"}}>
         💊 Vitamines {vitDone?"✓":"⚠️ à faire"}
@@ -474,7 +292,6 @@ function TodayStats({entries}){
         🌀 Nombril {nombrilDone?"✓":"⚠️ à faire"}
       </div>
     </div>
-
     <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
       <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight}/>
       <SC emoji="💧" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight}/>
@@ -485,6 +302,7 @@ function TodayStats({entries}){
   </div>);
 }
 
+// ─── Journal ──────────────────────────────────────────────────────────────────
 function Journal({entries,onDelete,onEdit}){
   const groups=groupByDay(entries);
   if(!entries.length)return<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.<br/><span style={{fontSize:32}}>👶</span></div>;
@@ -496,119 +314,121 @@ function Journal({entries,onDelete,onEdit}){
   </div>);
 }
 
-function fmtShortDate(iso){
-  const d=new Date(iso);
-  const day=String(d.toLocaleDateString("fr-CH",{day:"numeric",timeZone:"Europe/Zurich"})).padStart(2,"0");
-  const month=String(d.toLocaleDateString("fr-CH",{month:"numeric",timeZone:"Europe/Zurich"})).padStart(2,"0");
-  return`${day}.${month}`;
+// ─── Courbe de poids — axe X proportionnel aux dates ─────────────────────────
+function WeightChart({entries}){
+  const ws=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  if(ws.length<2)return<div style={{color:C.muted,textAlign:"center",padding:"40px 0"}}>Ajoutez au moins 2 pesées.</div>;
+
+  const PX=48,PY=24,PB=28,H=220;
+  const t0=new Date(ws[0].ts).getTime();
+  const t1=new Date(ws[ws.length-1].ts).getTime();
+  const totalMs=t1-t0||1;
+  const minPtsW=Math.max(300,ws.length*50);
+  const W=Math.max(minPtsW,window.innerWidth-32);
+  const innerW=W-PX*2;
+  const innerH=H-PY-PB;
+
+  const minW=Math.min(...ws.map(e=>e.weight))-0.05;
+  const maxW=Math.max(...ws.map(e=>e.weight))+0.05;
+
+  // X proportionnel au temps
+  const toX=ts=>PX+((new Date(ts).getTime()-t0)/totalMs)*innerW;
+  const toY=w=>PY+(1-(w-minW)/(maxW-minW))*innerH;
+
+  const pts=ws.map(e=>({x:toX(e.ts),y:toY(e.weight),w:e.weight,ts:e.ts}));
+  const path=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const area=`${path} L${pts[pts.length-1].x},${PY+innerH} L${pts[0].x},${PY+innerH} Z`;
+  const yTicks=4;
+  const yVals=Array.from({length:yTicks+1},(_,i)=>minW+(maxW-minW)*i/yTicks);
+
+  return(<div>
+    <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Courbe de poids</div>
+    <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",margin:"0 -16px",padding:"0 16px"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:W,minWidth:W,height:H,display:"block"}}>
+        <rect width={W} height={H} fill={C.bg} rx={14}/>
+        {yVals.map((v,i)=>(<g key={i}>
+          <line x1={PX} y1={toY(v)} x2={W-PX} y2={toY(v)} stroke={C.border} strokeDasharray="4 3" strokeWidth={0.8}/>
+          <text x={PX-6} y={toY(v)+4} fontSize={9} fill={C.muted} textAnchor="end">{v.toFixed(3)}</text>
+        </g>))}
+        <path d={area} fill={C.sage} fillOpacity={0.08}/>
+        <path d={path} fill="none" stroke={C.sage} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>
+        {pts.map((p,i)=>(<g key={i}>
+          <circle cx={p.x} cy={p.y} r={5} fill={C.sage} stroke="#fff" strokeWidth={1.5}/>
+          <text x={p.x} y={p.y-11} fontSize={10} fill={C.sage} textAnchor="middle" fontWeight={700}>{p.w.toFixed(3)}</text>
+          <text x={p.x} y={H-8} fontSize={9} fill={C.muted} textAnchor="middle">{fmtShortDate(p.ts)}</text>
+        </g>))}
+      </svg>
+    </div>
+  </div>);
 }
 
+// ─── Stats ────────────────────────────────────────────────────────────────────
 function StatsTab({entries}){
-  const now=new Date();
+  const[,setTick]=useState(0);
+  useEffect(()=>{
+    function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>document.removeEventListener("visibilitychange",onVisible);
+  },[]);
 
-  // Helpers
-  function entriesInDays(n){
-    const since=new Date(now.getTime()-n*86400000);
-    return entries.filter(e=>new Date(e.ts)>=since);
-  }
+  const now=new Date();
   function byDay(n){
     const days=[];
     for(let i=n-1;i>=0;i--){
       const d=new Date(now.getTime()-i*86400000);
       const k=d.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});
-      const label=i===0?"Auj.":i===1?"Hier":d.toLocaleDateString("fr-CH",{day:"numeric",month:"numeric",timeZone:"Europe/Zurich"});
+      const label=i===0?"Auj.":i===1?"Hier":`${pad(d.getDate())}.${pad(d.getMonth()+1)}`;
       days.push({k,label});
     }
     return days;
   }
-
   const days7=byDay(7);
-  const e7=entriesInDays(7);
-  const e3=entriesInDays(3);
-
-  // Feeds groupés
-  function feedSessionsIn(list){return groupFeeds(list);}
-
-  // Par jour sur 7j
-  const feedsByDay=days7.map(d=>({...d,v:feedSessionsIn(entries.filter(e=>dateZH(e.ts)===d.k)).length}));
+  const feedsByDay=days7.map(d=>({...d,v:groupFeeds(entries.filter(e=>dateZH(e.ts)===d.k)).length}));
   const wetByDay=days7.map(d=>({...d,v:entries.filter(e=>(e.cat==="diaper_wet"||e.cat==="diaper_both")&&dateZH(e.ts)===d.k).length}));
   const pooByDay=days7.map(d=>({...d,v:entries.filter(e=>(e.cat==="diaper_poo"||e.cat==="diaper_both")&&dateZH(e.ts)===d.k).length}));
-
-  // Moyennes 7j
   const avg=arr=>arr.length?Math.round(arr.reduce((s,x)=>s+x,0)/arr.length*10)/10:0;
   const avgFeeds=avg(feedsByDay.map(d=>d.v));
   const avgWet=avg(wetByDay.map(d=>d.v));
   const avgPoo=avg(pooByDay.map(d=>d.v));
-
-  // Intervalle moyen entre tétées
   const allFeeds=entries.filter(e=>e.cat==="feed").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
   const feedGaps=allFeeds.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFeeds[i].ts))/60000).filter(g=>g>20&&g<360);
   const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
-
-  // Poids
   const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
   const weightGain=weights.length>=2?(weights[weights.length-1].weight-weights[0].weight)*1000:null;
   const daysSinceBirth=weights.length>=2?Math.round((new Date(weights[weights.length-1].ts)-new Date(weights[0].ts))/86400000):null;
   const dailyGain=weightGain&&daysSinceBirth?Math.round(weightGain/daysSinceBirth):null;
-
-  // Nuits (22h-6h)
   const nightFeeds=entries.filter(e=>{
     if(e.cat!=="feed")return false;
-    const h=new Date(e.ts).toLocaleTimeString("fr-CH",{hour:"2-digit",timeZone:"Europe/Zurich"}).split(":")[0];
-    return +h>=22||+h<6;
+    const h=+new Date(e.ts).toLocaleTimeString("fr-CH",{hour:"2-digit",timeZone:"Europe/Zurich"}).split(":")[0];
+    return h>=22||h<6;
   });
   const nightByDay=days7.map(d=>({...d,v:nightFeeds.filter(e=>dateZH(e.ts)===d.k).length}));
   const avgNightFeeds=avg(nightByDay.map(d=>d.v));
-
-  // Soins compliance 7j
   const vitDays=days7.filter(d=>entries.some(e=>e.cat==="vitamin"&&e.vitaminDone&&dateZH(e.ts)===d.k)).length;
   const nombrilDays=days7.filter(d=>entries.some(e=>e.cat==="nombril"&&dateZH(e.ts)===d.k)).length;
-
-  // Dernières 48h vs 48h précédentes
   const e48a=entries.filter(e=>new Date(e.ts)>=new Date(now-48*3600000)&&new Date(e.ts)<new Date(now-24*3600000));
-  const e48b=entriesInDays(1);
+  const e48b=entries.filter(e=>new Date(e.ts)>=new Date(now-24*3600000));
   const trend=(cat,prev,curr)=>{
-    const p=prev.filter(e=>e.cat===cat).length;
-    const c=curr.filter(e=>e.cat===cat).length;
-    if(c>p)return{arrow:"↑",color:C.sage};
-    if(c<p)return{arrow:"↓",color:C.red};
+    const p=prev.filter(e=>e.cat===cat).length,c=curr.filter(e=>e.cat===cat).length;
+    if(c>p)return{arrow:"↑",color:C.sage};if(c<p)return{arrow:"↓",color:C.red};
     return{arrow:"→",color:C.muted};
   };
-  const tFeed=trend("feed",e48a,e48b);
-  const tWet=trend("diaper_wet",e48a,e48b);
-  const tPoo=trend("diaper_poo",e48a,e48b);
+  const tFeed=trend("feed",e48a,e48b),tWet=trend("diaper_wet",e48a,e48b),tPoo=trend("diaper_poo",e48a,e48b);
 
-  // Mini bar chart
-  function BarChart({data,color,max}){
-    const m=max||Math.max(...data.map(d=>d.v),1);
+  function BarChart({data,color}){
+    const m=Math.max(...data.map(d=>d.v),1);
     return(<div style={{display:"flex",alignItems:"flex-end",gap:4,height:60}}>
-      {data.map((d,i)=>(
-        <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-          <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v||""}</div>
-          <div style={{width:"100%",background:color,opacity:0.15+0.85*(d.v/m),borderRadius:"4px 4px 0 0",height:Math.max(d.v/m*44,d.v?4:0)}}/>
-          <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
-        </div>
-      ))}
+      {data.map((d,i)=>(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+        <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v||""}</div>
+        <div style={{width:"100%",background:color,opacity:0.15+0.85*(d.v/m),borderRadius:"4px 4px 0 0",height:Math.max(d.v/m*44,d.v?4:0)}}/>
+        <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
+      </div>))}
     </div>);
   }
-
-  const Section=({title,children})=>(
-    <div style={{background:C.surface,borderRadius:16,padding:"16px",border:`1px solid ${C.border}`}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>{title}</div>
-      {children}
-    </div>
-  );
-
-  const KV=({label,value,sub,color})=>(
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingBottom:8,borderBottom:`1px solid ${C.border}`,marginBottom:8}}>
-      <span style={{fontSize:13,color:C.muted}}>{label}</span>
-      <span style={{fontSize:15,fontWeight:700,color:color||C.text}}>{value}{sub&&<span style={{fontSize:11,fontWeight:400,color:C.muted,marginLeft:4}}>{sub}</span>}</span>
-    </div>
-  );
+  const Section=({title,children})=>(<div style={{background:C.surface,borderRadius:16,padding:"16px",border:`1px solid ${C.border}`}}><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>{title}</div>{children}</div>);
+  const KV=({label,value,sub,color})=>(<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingBottom:8,borderBottom:`1px solid ${C.border}`,marginBottom:8}}><span style={{fontSize:13,color:C.muted}}>{label}</span><span style={{fontSize:15,fontWeight:700,color:color||C.text}}>{value}{sub&&<span style={{fontSize:11,fontWeight:400,color:C.muted,marginLeft:4}}>{sub}</span>}</span></div>);
 
   return(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-
-    {/* Tendances 24h */}
     <Section title="📈 Tendances (24h vs veille)">
       <div style={{display:"flex",gap:10}}>
         {[["🤱","Allaitement",tFeed],["💧","Pipi",tWet],["💩","Caca",tPoo]].map(([emoji,label,t])=>(
@@ -620,8 +440,6 @@ function StatsTab({entries}){
         ))}
       </div>
     </Section>
-
-    {/* Moyennes 7j */}
     <Section title="📊 Moyennes sur 7 jours">
       <KV label="Allaitements / jour" value={avgFeeds}/>
       <KV label="Pipi / jour" value={avgWet}/>
@@ -629,110 +447,31 @@ function StatsTab({entries}){
       <KV label="Tétées nocturnes (22h-6h)" value={avgNightFeeds}/>
       {avgGap&&<KV label="Intervalle moyen entre tétées" value={durLabel(avgGap)}/>}
     </Section>
-
-    {/* Graphiques */}
-    <Section title="🤱 Allaitements par jour">
-      <BarChart data={feedsByDay} color={C.accent}/>
-    </Section>
-    <Section title="💧 Pipi par jour">
-      <BarChart data={wetByDay} color={C.sky}/>
-    </Section>
-    <Section title="💩 Caca par jour">
-      <BarChart data={pooByDay} color={C.golden}/>
-    </Section>
-
-    {/* Poids */}
+    <Section title="🤱 Allaitements par jour"><BarChart data={feedsByDay} color={C.accent}/></Section>
+    <Section title="💧 Pipi par jour"><BarChart data={wetByDay} color={C.sky}/></Section>
+    <Section title="💩 Caca par jour"><BarChart data={pooByDay} color={C.golden}/></Section>
     {weights.length>=2&&<Section title="⚖️ Croissance">
       <KV label="Poids initial" value={`${weights[0].weight} kg`} sub={fmtShortDate(weights[0].ts)}/>
       <KV label="Poids actuel" value={`${weights[weights.length-1].weight} kg`} sub={fmtShortDate(weights[weights.length-1].ts)}/>
       {weightGain!==null&&<KV label="Prise de poids totale" value={`+${weightGain} g`} color={C.sage}/>}
       {dailyGain&&<KV label="Gain moyen / jour" value={`+${dailyGain} g`} color={dailyGain>=15&&dailyGain<=40?C.sage:C.golden}/>}
     </Section>}
-
-    {/* Soins */}
     <Section title="💊 Soins — 7 derniers jours">
       <KV label="Vitamines données" value={`${vitDays}/7 jours`} color={vitDays>=6?C.sage:vitDays>=4?C.golden:C.red}/>
       <KV label="Nombril désinfecté" value={`${nombrilDays}/7 jours`} color={nombrilDays>=6?C.sage:nombrilDays>=4?C.golden:C.red}/>
     </Section>
-
-    {/* Faits marquants */}
     <Section title="✨ Faits marquants">
-      {weightGain!==null&&<div style={{background:C.sageLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.sage,marginBottom:8}}>
-        ⚖️ Rose a pris <strong>{weightGain} g</strong> depuis sa naissance{dailyGain?` (${dailyGain} g/jour)`:""}
-      </div>}
-      {avgGap&&<div style={{background:C.accentLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.accent,marginBottom:8}}>
-        🤱 Elle se nourrit en moyenne toutes les <strong>{durLabel(avgGap)}</strong>
-      </div>}
-      {avgNightFeeds>0&&<div style={{background:C.lavenderLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.lavender,marginBottom:8}}>
-        🌙 <strong>{avgNightFeeds}</strong> tétée{avgNightFeeds>1?"s":""} nocturne{avgNightFeeds>1?"s":""} par nuit en moyenne
-      </div>}
-      {vitDays<7&&<div style={{background:C.redLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.red,marginBottom:8}}>
-        💊 Vitamines oubliées <strong>{7-vitDays} jour{7-vitDays>1?"s":""}</strong> cette semaine
-      </div>}
-      {avgPoo<1&&<div style={{background:C.goldenLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.golden,marginBottom:8}}>
-        💩 Moins d'un caca par jour en moyenne — à surveiller
-      </div>}
-      {avgPoo>=3&&<div style={{background:C.goldenLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.golden,marginBottom:8}}>
-        💩 <strong>{avgPoo}</strong> cacas par jour — fréquence élevée, normal chez le nourrisson
-      </div>}
+      {weightGain!==null&&<div style={{background:C.sageLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.sage,marginBottom:8}}>⚖️ Rose a pris <strong>{weightGain} g</strong> depuis sa naissance{dailyGain?` (${dailyGain} g/jour)`:""}</div>}
+      {avgGap&&<div style={{background:C.accentLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.accent,marginBottom:8}}>🤱 Elle se nourrit en moyenne toutes les <strong>{durLabel(avgGap)}</strong></div>}
+      {avgNightFeeds>0&&<div style={{background:C.lavenderLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.lavender,marginBottom:8}}>🌙 <strong>{avgNightFeeds}</strong> tétée{avgNightFeeds>1?"s":""} nocturne{avgNightFeeds>1?"s":""} par nuit en moyenne</div>}
+      {vitDays<7&&<div style={{background:C.redLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.red,marginBottom:8}}>💊 Vitamines oubliées <strong>{7-vitDays} jour{7-vitDays>1?"s":""}</strong> cette semaine</div>}
+      {avgPoo<1&&<div style={{background:C.goldenLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.golden,marginBottom:8}}>💩 Moins d'un caca par jour en moyenne — à surveiller</div>}
+      {avgPoo>=3&&<div style={{background:C.goldenLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.golden,marginBottom:8}}>💩 <strong>{avgPoo}</strong> cacas par jour — fréquence élevée, normal chez le nourrisson</div>}
     </Section>
-
   </div>);
 }
 
-function WeightChart({entries}){
-  const ws=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  if(ws.length<2)return<div style={{color:C.muted,textAlign:"center",padding:"40px 0"}}>Ajoutez au moins 2 pesées.</div>;
-
-  const PX=48,PY=24,PB=28;
-  const minPts=Math.max(ws.length,6);
-  const W=Math.max(320,minPts*60);
-  const H=220;
-  const innerW=W-PX*2;
-  const innerH=H-PY-PB;
-
-  const minW=Math.min(...ws.map(e=>e.weight))-0.05;
-  const maxW=Math.max(...ws.map(e=>e.weight))+0.05;
-  const toX=i=>PX+i*(innerW/(ws.length-1));
-  const toY=w=>PY+(1-(w-minW)/(maxW-minW))*innerH;
-
-  const pts=ws.map((e,i)=>({x:toX(i),y:toY(e.weight),w:e.weight,ts:e.ts}));
-  const path=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-  const area=`${path} L${pts[pts.length-1].x},${PY+innerH} L${pts[0].x},${PY+innerH} Z`;
-
-  // Graduations axe Y
-  const yTicks=4;
-  const yVals=Array.from({length:yTicks+1},(_,i)=>minW+(maxW-minW)*i/yTicks);
-
-  return(<div>
-    <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Courbe de poids</div>
-    <div style={{overflowX:"auto",overflowY:"hidden",WebkitOverflowScrolling:"touch",margin:"0 -16px",padding:"0 16px"}}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.max(W,window.innerWidth-32),minWidth:W,height:H,display:"block"}}>
-        <rect width={W} height={H} fill={C.bg} rx={14}/>
-        {/* Grid + Y labels */}
-        {yVals.map((v,i)=>(
-          <g key={i}>
-            <line x1={PX} y1={toY(v)} x2={W-PX} y2={toY(v)} stroke={C.border} strokeDasharray="4 3" strokeWidth={0.8}/>
-            <text x={PX-6} y={toY(v)+4} fontSize={9} fill={C.muted} textAnchor="end">{v.toFixed(3)}</text>
-          </g>
-        ))}
-        {/* Area fill */}
-        <path d={area} fill={C.sage} fillOpacity={0.08}/>
-        {/* Line */}
-        <path d={path} fill="none" stroke={C.sage} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>
-        {/* Points + labels */}
-        {pts.map((p,i)=>(
-          <g key={i}>
-            <circle cx={p.x} cy={p.y} r={5} fill={C.sage} stroke="#fff" strokeWidth={1.5}/>
-            <text x={p.x} y={p.y-11} fontSize={10} fill={C.sage} textAnchor="middle" fontWeight={700}>{p.w.toFixed(3)}</text>
-            <text x={p.x} y={H-8} fontSize={9} fill={C.muted} textAnchor="middle">{fmtShortDate(p.ts)}</text>
-          </g>
-        ))}
-      </svg>
-    </div>
-  </div>);
-}
-
+// ─── Settings ─────────────────────────────────────────────────────────────────
 function Settings({data,onUpdate,syncStatus}){
   const[name,setName]=useState(data.babyName);
   const[birth,setBirth]=useState(data.birthDate);
@@ -754,7 +493,7 @@ function Settings({data,onUpdate,syncStatus}){
 function App(){
   const[data,setData]=useState(DEFAULT);
   const[tab,setTab]=useState("home");
-  const[modal,setModal]=useState(null); // {type, entry?}
+  const[modal,setModal]=useState(null);
   const[syncStatus,setSyncStatus]=useState("syncing");
   const saveTimer=useRef(null);
 
@@ -765,8 +504,9 @@ function App(){
     }).catch(()=>setSyncStatus("offline"));
   },[]);
 
+  // Sync Firebase : au retour sur l'app (visibilitychange) + toutes les 2 min si active
   useEffect(()=>{
-    const id=setInterval(()=>{
+    function syncNow(){
       fbRead().then(remote=>{
         if(!remote)return;
         setData(prev=>{
@@ -777,8 +517,13 @@ function App(){
         });
         setSyncStatus("ok");
       }).catch(()=>setSyncStatus("offline"));
-    },20000);
-    return()=>clearInterval(id);
+    }
+    // Sync au retour sur l'app (écran rallumé, onglet réactivé)
+    function onVisible(){if(document.visibilityState==="visible")syncNow();}
+    document.addEventListener("visibilitychange",onVisible);
+    // Sync de fond toutes les 2 min seulement si l'app est visible
+    const id=setInterval(()=>{if(document.visibilityState==="visible")syncNow();},2*60*1000);
+    return()=>{document.removeEventListener("visibilitychange",onVisible);clearInterval(id);};
   },[]);
 
   function persist(next){
@@ -796,19 +541,20 @@ function App(){
     persist({...data,entries:[entry,...data.entries]});
     setModal(null);
   }
-
   function editEntry(payload){
     const updated=data.entries.map(e=>e.id===modal.entry.id?{...e,...payload}:e);
     persist({...data,entries:updated});
     setModal(null);
   }
-
-  function importEntries(entries){
-    persist({...data,entries:[...entries,...data.entries]});
-    setModal(null);
-  }
   function deleteEntry(id){persist({...data,entries:data.entries.filter(e=>e.id!==id)});}
   function updateMeta(patch){persist({...data,...patch});}
+
+  const isEditing=modal&&modal.entry;
+  const modalType=modal?.type;
+  const modalEntry=modal?.entry;
+  function handleSave(payload){isEditing?editEntry(payload):addEntry(payload);}
+  function openModal(cat){setModal({type:cat});}
+  function openEdit(entry){setModal({type:entry.cat,entry});}
 
   function ageLabel(){
     if(!data.birthDate)return null;
@@ -818,34 +564,13 @@ function App(){
     return`${Math.floor(days/30)} mois`;
   }
 
-  const isEditing=modal&&modal.entry;
-  const modalType=modal?.type;
-  const modalEntry=modal?.entry;
-
   const QUICK=[
-    {cat:"feed",    color:C.accent},
-    {cat:"diaper_wet", color:C.sky},
-    {cat:"diaper_poo", color:C.golden},
-    {cat:"diaper_both",color:C.golden},
-    {cat:"sleep",   color:C.lavender},
-    {cat:"vitamin", color:C.accent},
-    {cat:"nombril", color:C.teal},
-    {cat:"nez",     color:C.sky},
-    {cat:"weight",  color:C.sage},
-    {cat:"temperature",color:C.red},
-    {cat:"note",    color:C.muted},
+    {cat:"feed"},{cat:"diaper_wet"},{cat:"diaper_poo"},{cat:"diaper_both"},
+    {cat:"sleep"},{cat:"vitamin"},{cat:"nombril"},{cat:"nez"},
+    {cat:"weight"},{cat:"temperature"},{cat:"note"},
   ];
-
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
-
-  function openModal(cat){setModal({type:cat});}
-  function openEdit(entry){setModal({type:entry.cat,entry});}
-
-  function handleSave(payload){
-    if(isEditing)editEntry(payload);
-    else addEntry(payload);
-  }
 
   return(<div style={{background:C.bg,minHeight:"100vh",color:C.text}}>
     <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"14px 20px 12px",position:"sticky",top:0,zIndex:40}}>
@@ -872,9 +597,6 @@ function App(){
             );})}
           </div>
         </div>
-        <button onClick={()=>setModal({type:"import"})} style={{background:C.surface,border:`1.5px dashed ${C.accent}`,borderRadius:14,padding:"12px",cursor:"pointer",color:C.accent,fontWeight:700,fontSize:14}}>
-          📋 Importer depuis le carnet
-        </button>
         {sorted.length>0&&(<div>
           <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Récent</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>{sorted.slice(0,5).map(e=><EntryCard key={e.id} entry={e} onDelete={deleteEntry} onEdit={openEdit}/>)}</div>
@@ -901,7 +623,7 @@ function App(){
         <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
             <div style={{fontSize:18,fontWeight:800}}>
-              {modalType==="import"?"📋 Import carnet":isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}
+              {isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}
             </div>
             <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
           </div>
@@ -911,7 +633,6 @@ function App(){
           {modalType==="weight"&&<WeightForm onSave={handleSave} initial={modalEntry}/>}
           {modalType==="temperature"&&<TempForm onSave={handleSave} initial={modalEntry}/>}
           {(modalType==="vitamin"||modalType==="bath"||modalType==="mood"||modalType==="note"||modalType==="nombril"||modalType==="nez")&&<SimpleForm cat={modalType} color={CATS[modalType].color} onSave={handleSave} initial={modalEntry}/>}
-          {modalType==="import"&&<ImportForm onImport={importEntries}/>}
         </div>
       </div>
     )}
