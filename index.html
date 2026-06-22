@@ -567,7 +567,7 @@ function App(){
   const QUICK=[
     {cat:"feed"},{cat:"diaper_wet"},{cat:"diaper_poo"},{cat:"diaper_both"},
     {cat:"sleep"},{cat:"vitamin"},{cat:"nombril"},{cat:"nez"},
-    {cat:"weight"},{cat:"temperature"},{cat:"note"},
+    {cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"note"},
   ];
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
