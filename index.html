@@ -11,96 +11,92 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  body{background:#FBF7F4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2D2118;}
-  input,select{font-family:inherit;-webkit-appearance:none;}
-  button{font-family:inherit;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#FBF7F4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2D2118;}
+input,select,textarea{font-family:inherit;-webkit-appearance:none;}
+button{font-family:inherit;}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
+const { useState, useEffect, useRef } = React;
 
 const FB_URL = "https://suivi-rose-17601-default-rtdb.europe-west1.firebasedatabase.app";
 const FB_PATH = `${FB_URL}/tracker.json`;
 const FB_KEY = "AIzaSyB1E5I3oN9MHcs0kaT3xv-4iaR_Hv86lhw";
+async function fbRead(){try{const r=await fetch(`${FB_PATH}?auth=${FB_KEY}`);if(!r.ok)return null;return await r.json();}catch{return null;}}
+async function fbWrite(d){try{await fetch(`${FB_PATH}?auth=${FB_KEY}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});}catch{}}
 
-async function fbRead() {
-  try { const r=await fetch(`${FB_PATH}?auth=${FB_KEY}`); if(!r.ok)return null; return await r.json(); } catch{return null;}
+function localNow(){
+  const n=new Date();
+  const off=n.getTimezoneOffset();
+  return new Date(n.getTime()-off*60000).toISOString().slice(0,16);
 }
-async function fbWrite(data) {
-  try { await fetch(`${FB_PATH}?auth=${FB_KEY}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}); } catch{}
-}
-
-function localNow() {
-  const now=new Date();
-  return new Date(now.getTime()+(2*60-now.getTimezoneOffset())*60000).toISOString().slice(0,16);
-}
-function localHoursBefore(h) {
-  const now=new Date();
-  return new Date(now.getTime()+(2*60-now.getTimezoneOffset())*60000-h*3600000).toISOString().slice(0,16);
+function localHoursBefore(h){
+  const n=new Date();
+  const off=n.getTimezoneOffset();
+  return new Date(n.getTime()-off*60000-h*3600000).toISOString().slice(0,16);
 }
 
-const C = {
+const C={
   bg:"#FBF7F4",surface:"#FFFFFF",accent:"#C97A5A",accentLight:"#F0D9CC",
   sage:"#7A9E87",sageLight:"#D6EAD9",lavender:"#9B8EC4",lavenderLight:"#E5E1F5",
   sky:"#5A8EC9",skyLight:"#D6E6F5",golden:"#C9A05A",goldenLight:"#F5EBD6",
   red:"#C95A5A",redLight:"#FFD9D9",text:"#2D2118",muted:"#7A6A5A",border:"#E8DDD4",
+  teal:"#5A9E9B",tealLight:"#D6ECEA",
 };
-const CATS = {
-  feed:        {label:"Allaitement",emoji:"🤱",color:C.accent,  bg:C.accentLight},
-  diaper_wet:  {label:"Pipi",       emoji:"💧",color:C.sky,     bg:C.skyLight},
-  diaper_poo:  {label:"Caca",       emoji:"💩",color:C.golden,  bg:C.goldenLight},
-  sleep:       {label:"Sommeil",    emoji:"😴",color:C.lavender,bg:C.lavenderLight},
-  weight:      {label:"Poids",      emoji:"⚖️",color:C.sage,    bg:C.sageLight},
-  vitamin:     {label:"Vitamines",  emoji:"💊",color:C.accent,  bg:"#FFE5D9"},
-  bath:        {label:"Bain",       emoji:"🛁",color:C.sky,     bg:"#D9EEFF"},
-  temperature: {label:"Température",emoji:"🌡️",color:C.red,     bg:C.redLight},
-  mood:        {label:"Humeur",     emoji:"😊",color:C.sage,    bg:C.sageLight},
-  note:        {label:"Note",       emoji:"📝",color:C.muted,   bg:"#EEEEEE"},
+
+const CATS={
+  feed:        {label:"Allaitement", emoji:"🤱",color:C.accent,  bg:C.accentLight},
+  diaper_wet:  {label:"Pipi",        emoji:"💧",color:C.sky,     bg:C.skyLight},
+  diaper_poo:  {label:"Caca",        emoji:"💩",color:C.golden,  bg:C.goldenLight},
+  diaper_both: {label:"Pipi+Caca",   emoji:"💧💩",color:C.golden,bg:C.goldenLight},
+  sleep:       {label:"Sommeil",     emoji:"😴",color:C.lavender,bg:C.lavenderLight},
+  weight:      {label:"Poids",       emoji:"⚖️",color:C.sage,    bg:C.sageLight},
+  vitamin:     {label:"Vitamines",   emoji:"💊",color:C.accent,  bg:"#FFE5D9"},
+  nombril:     {label:"Nombril",     emoji:"🌀",color:C.teal,    bg:C.tealLight},
+  nez:         {label:"Rinçage nez", emoji:"👃",color:C.sky,     bg:"#E0F0FF"},
+  bath:        {label:"Bain",        emoji:"🛁",color:C.sky,     bg:"#D9EEFF"},
+  temperature: {label:"Température", emoji:"🌡️",color:C.red,     bg:C.redLight},
+  mood:        {label:"Humeur",      emoji:"😊",color:C.sage,    bg:C.sageLight},
+  note:        {label:"Note",        emoji:"📝",color:C.muted,   bg:"#EEEEEE"},
 };
+
 const MOODS=["😴","😊","😢","😤","😌","🤔"];
 const POO_COLORS=["Jaune moutarde","Vert","Brun","Orange","Noir"];
 const POO_TEX=["Liquide","Mou","Normal","Granuleux"];
 
-// Conversion heure locale CH (UTC+2) → UTC pour stockage
-function chToUTC(dateStr, timeStr) {
-  // dateStr: "2026-06-20", timeStr: "00:39"
-  return new Date(`${dateStr}T${timeStr}:00+02:00`).toISOString();
-}
-
-const PRELOAD = [
-  // ══ Entrées antérieures (18-19.06) ══
+const PRELOAD=[
   {id:100,cat:"diaper_wet",ts:"2026-06-17T21:10:00Z",note:"pipi + règle",author:"carnet"},
   {id:101,cat:"diaper_poo",ts:"2026-06-18T03:45:00Z",author:"carnet"},
   {id:102,cat:"feed",side:"Gauche",ts:"2026-06-18T03:55:00Z",author:"carnet"},
-  {id:103,cat:"feed",side:"Droit", ts:"2026-06-18T04:24:00Z",author:"carnet"},
-  {id:104,cat:"feed",side:"Droit", ts:"2026-06-18T04:45:00Z",duration:25,note:"gouttes + reprise sein droit",author:"carnet"},
+  {id:103,cat:"feed",side:"Droit",ts:"2026-06-18T04:24:00Z",author:"carnet"},
+  {id:104,cat:"feed",side:"Droit",ts:"2026-06-18T04:45:00Z",duration:25,note:"gouttes + reprise sein droit",author:"carnet"},
   {id:105,cat:"vitamin",vitaminDone:true,ts:"2026-06-18T04:45:00Z",author:"carnet"},
-  {id:106,cat:"feed",side:"Droit", ts:"2026-06-18T06:13:00Z",author:"carnet"},
+  {id:106,cat:"feed",side:"Droit",ts:"2026-06-18T06:13:00Z",author:"carnet"},
   {id:107,cat:"feed",side:"Gauche",ts:"2026-06-18T06:38:00Z",duration:22,author:"carnet"},
   {id:108,cat:"diaper_wet",ts:"2026-06-18T07:00:00Z",author:"carnet"},
   {id:109,cat:"diaper_poo",ts:"2026-06-18T07:00:00Z",author:"carnet"},
   {id:110,cat:"diaper_poo",ts:"2026-06-18T07:35:00Z",author:"carnet"},
   {id:111,cat:"diaper_wet",ts:"2026-06-18T08:58:00Z",author:"carnet"},
   {id:112,cat:"diaper_poo",ts:"2026-06-18T08:58:00Z",author:"carnet"},
-  {id:113,cat:"feed",side:"Droit", ts:"2026-06-18T08:58:00Z",author:"carnet"},
+  {id:113,cat:"feed",side:"Droit",ts:"2026-06-18T08:58:00Z",author:"carnet"},
   {id:114,cat:"feed",side:"Gauche",ts:"2026-06-18T09:20:00Z",duration:15,author:"carnet"},
   {id:115,cat:"feed",side:"Gauche",ts:"2026-06-18T10:00:00Z",author:"carnet"},
-  {id:116,cat:"feed",side:"Droit", ts:"2026-06-18T10:35:00Z",duration:25,author:"carnet"},
+  {id:116,cat:"feed",side:"Droit",ts:"2026-06-18T10:35:00Z",duration:25,author:"carnet"},
   {id:117,cat:"diaper_poo",ts:"2026-06-18T13:00:00Z",author:"carnet"},
-  {id:118,cat:"feed",side:"Droit", ts:"2026-06-18T13:34:00Z",duration:16,author:"carnet"},
+  {id:118,cat:"feed",side:"Droit",ts:"2026-06-18T13:34:00Z",duration:16,author:"carnet"},
   {id:119,cat:"diaper_wet",ts:"2026-06-18T14:50:00Z",author:"carnet"},
   {id:120,cat:"feed",side:"Gauche",ts:"2026-06-18T15:00:00Z",author:"carnet"},
-  {id:121,cat:"feed",side:"Droit", ts:"2026-06-18T15:30:00Z",duration:15,author:"carnet"},
+  {id:121,cat:"feed",side:"Droit",ts:"2026-06-18T15:30:00Z",duration:15,author:"carnet"},
   {id:122,cat:"diaper_poo",ts:"2026-06-18T15:49:00Z",author:"carnet"},
   {id:123,cat:"diaper_wet",ts:"2026-06-18T16:15:00Z",author:"carnet"},
   {id:200,cat:"diaper_wet",ts:"2026-06-18T19:25:00Z",author:"carnet"},
   {id:201,cat:"diaper_poo",ts:"2026-06-18T19:25:00Z",author:"carnet"},
   {id:202,cat:"feed",side:"Les deux",ts:"2026-06-18T20:00:00Z",author:"carnet"},
   {id:203,cat:"feed",side:"Gauche",ts:"2026-06-18T20:40:00Z",author:"carnet"},
-  {id:204,cat:"feed",side:"Droit", ts:"2026-06-18T20:55:00Z",author:"carnet"},
+  {id:204,cat:"feed",side:"Droit",ts:"2026-06-18T20:55:00Z",author:"carnet"},
   {id:205,cat:"diaper_wet",ts:"2026-06-18T21:50:00Z",author:"carnet"},
   {id:206,cat:"diaper_poo",ts:"2026-06-18T21:50:00Z",author:"carnet"},
   {id:300,cat:"feed",side:"Gauche",ts:"2026-06-19T03:50:00Z",note:"1er réveil",author:"carnet"},
@@ -109,9 +105,9 @@ const PRELOAD = [
   {id:303,cat:"vitamin",vitaminDone:true,ts:"2026-06-19T04:45:00Z",note:"nombril",author:"carnet"},
   {id:304,cat:"diaper_wet",ts:"2026-06-19T07:30:00Z",author:"carnet"},
   {id:305,cat:"diaper_poo",ts:"2026-06-19T07:30:00Z",author:"carnet"},
-  {id:306,cat:"feed",side:"Droit", ts:"2026-06-19T07:40:00Z",duration:25,author:"carnet"},
+  {id:306,cat:"feed",side:"Droit",ts:"2026-06-19T07:40:00Z",duration:25,author:"carnet"},
   {id:307,cat:"feed",side:"Gauche",ts:"2026-06-19T08:25:00Z",duration:15,author:"carnet"},
-  {id:308,cat:"feed",side:"Droit", ts:"2026-06-19T10:07:00Z",note:"assise → top → dodo",author:"carnet"},
+  {id:308,cat:"feed",side:"Droit",ts:"2026-06-19T10:07:00Z",note:"assise → top → dodo",author:"carnet"},
   {id:309,cat:"diaper_wet",ts:"2026-06-19T11:00:00Z",author:"carnet"},
   {id:310,cat:"diaper_poo",ts:"2026-06-19T11:00:00Z",author:"carnet"},
   {id:311,cat:"diaper_wet",ts:"2026-06-19T12:30:00Z",author:"carnet"},
@@ -119,171 +115,151 @@ const PRELOAD = [
   {id:313,cat:"feed",side:"Gauche",ts:"2026-06-19T12:45:00Z",author:"carnet"},
   {id:314,cat:"weight",weight:3.35,ts:"2026-06-19T12:45:00Z",author:"carnet"},
   {id:315,cat:"bath",ts:"2026-06-19T13:30:00Z",note:"bain emmayoté",author:"carnet"},
-  {id:316,cat:"feed",side:"Droit", ts:"2026-06-19T13:45:00Z",author:"carnet"},
+  {id:316,cat:"feed",side:"Droit",ts:"2026-06-19T13:45:00Z",author:"carnet"},
   {id:317,cat:"feed",side:"Gauche",ts:"2026-06-19T16:30:00Z",author:"carnet"},
-  {id:318,cat:"feed",side:"Droit", ts:"2026-06-19T16:48:00Z",author:"carnet"},
+  {id:318,cat:"feed",side:"Droit",ts:"2026-06-19T16:48:00Z",author:"carnet"},
   {id:319,cat:"diaper_wet",ts:"2026-06-19T18:00:00Z",author:"carnet"},
-
-  // ══ 20.06.26 ══
-  {id:400,cat:"feed",side:"Gauche",  ts:"2026-06-19T22:39:00Z",author:"carnet"},
-  {id:401,cat:"feed",side:"Droit",   ts:"2026-06-19T23:00:00Z",author:"carnet"},
-  {id:402,cat:"diaper_wet",          ts:"2026-06-20T03:50:00Z",author:"carnet"},
-  {id:403,cat:"feed",side:"Gauche",  ts:"2026-06-19T22:39:00Z",author:"carnet"},
-  {id:404,cat:"feed",side:"Droit",   ts:"2026-06-20T04:13:00Z",author:"carnet"},
-  // 00h39 sein gauche + 01h00 droit
-  {id:410,cat:"feed",side:"Gauche",  ts:"2026-06-19T22:39:00Z",author:"carnet"},
-  {id:411,cat:"feed",side:"Droit",   ts:"2026-06-19T23:00:00Z",author:"carnet"},
-  // 05h50 pipi
-  {id:412,cat:"diaper_wet",          ts:"2026-06-20T03:50:00Z",author:"carnet"},
-  // 05h56 sein gauche
-  {id:413,cat:"feed",side:"Gauche",  ts:"2026-06-20T03:56:00Z",author:"carnet"},
-  // 06h13 sein droit
-  {id:414,cat:"feed",side:"Droit",   ts:"2026-06-20T04:13:00Z",author:"carnet"},
-  // 07h00 pipi
-  {id:415,cat:"diaper_wet",          ts:"2026-06-20T05:00:00Z",author:"carnet"},
-  // 07h13 sein gauche + 07h25 droit
-  {id:416,cat:"feed",side:"Gauche",  ts:"2026-06-20T05:13:00Z",author:"carnet"},
-  {id:417,cat:"feed",side:"Droit",   ts:"2026-06-20T05:25:00Z",author:"carnet"},
-  // 11h25 sein gauche
-  {id:418,cat:"feed",side:"Gauche",  ts:"2026-06-20T09:25:00Z",author:"carnet"},
-  // 11h40 pipi + caca + nombril + vitamine
-  {id:419,cat:"diaper_wet",          ts:"2026-06-20T09:40:00Z",author:"carnet"},
-  {id:420,cat:"diaper_poo",          ts:"2026-06-20T09:40:00Z",author:"carnet"},
+  {id:410,cat:"feed",side:"Gauche",ts:"2026-06-19T22:39:00Z",author:"carnet"},
+  {id:411,cat:"feed",side:"Droit",ts:"2026-06-19T23:00:00Z",author:"carnet"},
+  {id:412,cat:"diaper_wet",ts:"2026-06-20T03:50:00Z",author:"carnet"},
+  {id:413,cat:"feed",side:"Gauche",ts:"2026-06-20T03:56:00Z",author:"carnet"},
+  {id:414,cat:"feed",side:"Droit",ts:"2026-06-20T04:13:00Z",author:"carnet"},
+  {id:415,cat:"diaper_wet",ts:"2026-06-20T05:00:00Z",author:"carnet"},
+  {id:416,cat:"feed",side:"Gauche",ts:"2026-06-20T05:13:00Z",author:"carnet"},
+  {id:417,cat:"feed",side:"Droit",ts:"2026-06-20T05:25:00Z",author:"carnet"},
+  {id:418,cat:"feed",side:"Gauche",ts:"2026-06-20T09:25:00Z",author:"carnet"},
+  {id:419,cat:"diaper_wet",ts:"2026-06-20T09:40:00Z",author:"carnet"},
+  {id:420,cat:"diaper_poo",ts:"2026-06-20T09:40:00Z",author:"carnet"},
   {id:421,cat:"vitamin",vitaminDone:true,ts:"2026-06-20T09:40:00Z",note:"nombril",author:"carnet"},
-  // 11h47 sein droit
-  {id:422,cat:"feed",side:"Droit",   ts:"2026-06-20T09:47:00Z",author:"carnet"},
-  // 13h40 pipi + caca
-  {id:423,cat:"diaper_wet",          ts:"2026-06-20T11:40:00Z",author:"carnet"},
-  {id:424,cat:"diaper_poo",          ts:"2026-06-20T11:40:00Z",author:"carnet"},
-  // 14h00 sein droit + 14h15 gauche
-  {id:425,cat:"feed",side:"Droit",   ts:"2026-06-20T12:00:00Z",author:"carnet"},
-  {id:426,cat:"feed",side:"Gauche",  ts:"2026-06-20T12:15:00Z",author:"carnet"},
-  // 15h43 pipi + caca
-  {id:427,cat:"diaper_wet",          ts:"2026-06-20T13:43:00Z",author:"carnet"},
-  {id:428,cat:"diaper_poo",          ts:"2026-06-20T13:43:00Z",author:"carnet"},
-  // 17h20 caca
-  {id:429,cat:"diaper_poo",          ts:"2026-06-20T15:20:00Z",author:"carnet"},
-  // 17h24 sein gauche + 17h45 droit + 17h56
-  {id:430,cat:"feed",side:"Gauche",  ts:"2026-06-20T15:24:00Z",author:"carnet"},
-  {id:431,cat:"feed",side:"Droit",   ts:"2026-06-20T15:45:00Z",author:"carnet"},
-  {id:432,cat:"feed",side:"Droit",   ts:"2026-06-20T15:56:00Z",author:"carnet"},
-  // 18h00 pipi + caca
-  {id:433,cat:"diaper_wet",          ts:"2026-06-20T16:00:00Z",author:"carnet"},
-  {id:434,cat:"diaper_poo",          ts:"2026-06-20T16:00:00Z",author:"carnet"},
-  // 18h20 sein droit
-  {id:435,cat:"feed",side:"Droit",   ts:"2026-06-20T16:20:00Z",author:"carnet"},
-  // 18h50 pipi + caca
-  {id:436,cat:"diaper_wet",          ts:"2026-06-20T16:50:00Z",author:"carnet"},
-  {id:437,cat:"diaper_poo",          ts:"2026-06-20T16:50:00Z",author:"carnet"},
-  // 21h30 pipi + caca
-  {id:438,cat:"diaper_wet",          ts:"2026-06-20T19:30:00Z",author:"carnet"},
-  {id:439,cat:"diaper_poo",          ts:"2026-06-20T19:30:00Z",author:"carnet"},
-  // 21h50 sein gauche + 22h07 droite
-  {id:440,cat:"feed",side:"Gauche",  ts:"2026-06-20T19:50:00Z",author:"carnet"},
-  {id:441,cat:"feed",side:"Droit",   ts:"2026-06-20T20:07:00Z",author:"carnet"},
-  // 22h55 caca
-  {id:442,cat:"diaper_poo",          ts:"2026-06-20T20:55:00Z",author:"carnet"},
-  // 23h00 sein gauche
-  {id:443,cat:"feed",side:"Gauche",  ts:"2026-06-20T21:00:00Z",author:"carnet"},
-  // 23h30 pipi + caca
-  {id:444,cat:"diaper_wet",          ts:"2026-06-20T21:30:00Z",author:"carnet"},
-  {id:445,cat:"diaper_poo",          ts:"2026-06-20T21:30:00Z",author:"carnet"},
-
-  // ══ 21.06.26 ══
-  // note: difficulté à s'endormir → 01h30, sérum physio dans le nez a aidé
+  {id:422,cat:"feed",side:"Droit",ts:"2026-06-20T09:47:00Z",author:"carnet"},
+  {id:423,cat:"diaper_wet",ts:"2026-06-20T11:40:00Z",author:"carnet"},
+  {id:424,cat:"diaper_poo",ts:"2026-06-20T11:40:00Z",author:"carnet"},
+  {id:425,cat:"feed",side:"Droit",ts:"2026-06-20T12:00:00Z",author:"carnet"},
+  {id:426,cat:"feed",side:"Gauche",ts:"2026-06-20T12:15:00Z",author:"carnet"},
+  {id:427,cat:"diaper_wet",ts:"2026-06-20T13:43:00Z",author:"carnet"},
+  {id:428,cat:"diaper_poo",ts:"2026-06-20T13:43:00Z",author:"carnet"},
+  {id:429,cat:"diaper_poo",ts:"2026-06-20T15:20:00Z",author:"carnet"},
+  {id:430,cat:"feed",side:"Gauche",ts:"2026-06-20T15:24:00Z",author:"carnet"},
+  {id:431,cat:"feed",side:"Droit",ts:"2026-06-20T15:45:00Z",author:"carnet"},
+  {id:432,cat:"feed",side:"Droit",ts:"2026-06-20T15:56:00Z",author:"carnet"},
+  {id:433,cat:"diaper_wet",ts:"2026-06-20T16:00:00Z",author:"carnet"},
+  {id:434,cat:"diaper_poo",ts:"2026-06-20T16:00:00Z",author:"carnet"},
+  {id:435,cat:"feed",side:"Droit",ts:"2026-06-20T16:20:00Z",author:"carnet"},
+  {id:436,cat:"diaper_wet",ts:"2026-06-20T16:50:00Z",author:"carnet"},
+  {id:437,cat:"diaper_poo",ts:"2026-06-20T16:50:00Z",author:"carnet"},
+  {id:438,cat:"diaper_wet",ts:"2026-06-20T19:30:00Z",author:"carnet"},
+  {id:439,cat:"diaper_poo",ts:"2026-06-20T19:30:00Z",author:"carnet"},
+  {id:440,cat:"feed",side:"Gauche",ts:"2026-06-20T19:50:00Z",author:"carnet"},
+  {id:441,cat:"feed",side:"Droit",ts:"2026-06-20T20:07:00Z",author:"carnet"},
+  {id:442,cat:"diaper_poo",ts:"2026-06-20T20:55:00Z",author:"carnet"},
+  {id:443,cat:"feed",side:"Gauche",ts:"2026-06-20T21:00:00Z",author:"carnet"},
+  {id:444,cat:"diaper_wet",ts:"2026-06-20T21:30:00Z",author:"carnet"},
+  {id:445,cat:"diaper_poo",ts:"2026-06-20T21:30:00Z",author:"carnet"},
   {id:500,cat:"note",ts:"2026-06-20T23:00:00Z",note:"Difficulté à s'endormir → 01h30. Sérum physio dans le nez a aidé.",author:"carnet"},
-  // 06h50 à 07h20 — 2 seins
-  {id:501,cat:"feed",side:"Gauche",  ts:"2026-06-21T04:50:00Z",author:"carnet"},
-  {id:502,cat:"feed",side:"Droit",   ts:"2026-06-21T05:00:00Z",author:"carnet"},
-  // 07h50 caca + pipi
-  {id:503,cat:"diaper_wet",          ts:"2026-06-21T05:50:00Z",author:"carnet"},
-  {id:504,cat:"diaper_poo",          ts:"2026-06-21T05:50:00Z",author:"carnet"},
-  // 07h55 sein droit
-  {id:505,cat:"feed",side:"Droit",   ts:"2026-06-21T05:55:00Z",author:"carnet"},
-  // 09h30 pipi + caca + vitamine
-  {id:506,cat:"diaper_wet",          ts:"2026-06-21T07:30:00Z",author:"carnet"},
-  {id:507,cat:"diaper_poo",          ts:"2026-06-21T07:30:00Z",author:"carnet"},
+  {id:501,cat:"feed",side:"Gauche",ts:"2026-06-21T04:50:00Z",author:"carnet"},
+  {id:502,cat:"feed",side:"Droit",ts:"2026-06-21T05:00:00Z",author:"carnet"},
+  {id:503,cat:"diaper_wet",ts:"2026-06-21T05:50:00Z",author:"carnet"},
+  {id:504,cat:"diaper_poo",ts:"2026-06-21T05:50:00Z",author:"carnet"},
+  {id:505,cat:"feed",side:"Droit",ts:"2026-06-21T05:55:00Z",author:"carnet"},
+  {id:506,cat:"diaper_wet",ts:"2026-06-21T07:30:00Z",author:"carnet"},
+  {id:507,cat:"diaper_poo",ts:"2026-06-21T07:30:00Z",author:"carnet"},
   {id:508,cat:"vitamin",vitaminDone:true,ts:"2026-06-21T07:30:00Z",author:"carnet"},
-  // 11h00 sein gauche
-  {id:509,cat:"feed",side:"Gauche",  ts:"2026-06-21T09:00:00Z",author:"carnet"},
-  // 11h40 pipi + caca
-  {id:510,cat:"diaper_wet",          ts:"2026-06-21T09:40:00Z",author:"carnet"},
-  {id:511,cat:"diaper_poo",          ts:"2026-06-21T09:40:00Z",author:"carnet"},
-  // 11h45 sein droit + sein gauche
-  {id:512,cat:"feed",side:"Droit",   ts:"2026-06-21T09:45:00Z",author:"carnet"},
-  {id:513,cat:"feed",side:"Gauche",  ts:"2026-06-21T09:50:00Z",author:"carnet"},
-  // 13h00 pipi
-  {id:514,cat:"diaper_wet",          ts:"2026-06-21T11:00:00Z",author:"carnet"},
-  // 13h38 gauche + 14h11 droite
-  {id:515,cat:"feed",side:"Gauche",  ts:"2026-06-21T11:38:00Z",author:"carnet"},
-  {id:516,cat:"feed",side:"Droit",   ts:"2026-06-21T12:11:00Z",author:"carnet"},
-  // 17h15 pipi + caca
-  {id:517,cat:"diaper_wet",          ts:"2026-06-21T15:15:00Z",author:"carnet"},
-  {id:518,cat:"diaper_poo",          ts:"2026-06-21T15:15:00Z",author:"carnet"},
-  // 17h30→18h30 allaitement Hazot
+  {id:509,cat:"feed",side:"Gauche",ts:"2026-06-21T09:00:00Z",author:"carnet"},
+  {id:510,cat:"diaper_wet",ts:"2026-06-21T09:40:00Z",author:"carnet"},
+  {id:511,cat:"diaper_poo",ts:"2026-06-21T09:40:00Z",author:"carnet"},
+  {id:512,cat:"feed",side:"Droit",ts:"2026-06-21T09:45:00Z",author:"carnet"},
+  {id:513,cat:"feed",side:"Gauche",ts:"2026-06-21T09:50:00Z",author:"carnet"},
+  {id:514,cat:"diaper_wet",ts:"2026-06-21T11:00:00Z",author:"carnet"},
+  {id:515,cat:"feed",side:"Gauche",ts:"2026-06-21T11:38:00Z",author:"carnet"},
+  {id:516,cat:"feed",side:"Droit",ts:"2026-06-21T12:11:00Z",author:"carnet"},
+  {id:517,cat:"diaper_wet",ts:"2026-06-21T15:15:00Z",author:"carnet"},
+  {id:518,cat:"diaper_poo",ts:"2026-06-21T15:15:00Z",author:"carnet"},
   {id:519,cat:"feed",side:"Les deux",ts:"2026-06-21T15:30:00Z",duration:60,note:"allaitement Hazot",author:"carnet"},
-  // 20h30 pipi
-  {id:520,cat:"diaper_wet",          ts:"2026-06-21T18:30:00Z",author:"carnet"},
-  // 20h30 allaitement gauche + 20h55 droit + 21h12
-  {id:521,cat:"feed",side:"Gauche",  ts:"2026-06-21T18:30:00Z",author:"carnet"},
-  {id:522,cat:"feed",side:"Droit",   ts:"2026-06-21T18:55:00Z",author:"carnet"},
-  {id:523,cat:"feed",side:"Gauche",  ts:"2026-06-21T19:12:00Z",author:"carnet"},
-  // 21h58 sein droit → 22h12
-  {id:524,cat:"feed",side:"Droit",   ts:"2026-06-21T19:58:00Z",duration:14,author:"carnet"},
-  // 22h36 sein gauche → 23h00
-  {id:525,cat:"feed",side:"Gauche",  ts:"2026-06-21T20:36:00Z",duration:24,author:"carnet"},
-
-  // ══ 22.06.26 ══
-  // 05h30 pipi + caca
-  {id:600,cat:"diaper_wet",          ts:"2026-06-22T03:30:00Z",author:"carnet"},
-  {id:601,cat:"diaper_poo",          ts:"2026-06-22T03:30:00Z",author:"carnet"},
-  // 06h00 sein gauche + 06h24 droite + 06h45
-  {id:602,cat:"feed",side:"Gauche",  ts:"2026-06-22T04:00:00Z",author:"carnet"},
-  {id:603,cat:"feed",side:"Droit",   ts:"2026-06-22T04:24:00Z",author:"carnet"},
-  {id:604,cat:"feed",side:"Gauche",  ts:"2026-06-22T04:45:00Z",author:"carnet"},
-  // 07h05 pipi + caca
-  {id:605,cat:"diaper_wet",          ts:"2026-06-22T05:05:00Z",author:"carnet"},
-  {id:606,cat:"diaper_poo",          ts:"2026-06-22T05:05:00Z",author:"carnet"},
-  // 08h50 pipi + caca + nombril + vitamine
-  {id:607,cat:"diaper_wet",          ts:"2026-06-22T06:50:00Z",author:"carnet"},
-  {id:608,cat:"diaper_poo",          ts:"2026-06-22T06:50:00Z",author:"carnet"},
+  {id:520,cat:"diaper_wet",ts:"2026-06-21T18:30:00Z",author:"carnet"},
+  {id:521,cat:"feed",side:"Gauche",ts:"2026-06-21T18:30:00Z",author:"carnet"},
+  {id:522,cat:"feed",side:"Droit",ts:"2026-06-21T18:55:00Z",author:"carnet"},
+  {id:523,cat:"feed",side:"Gauche",ts:"2026-06-21T19:12:00Z",author:"carnet"},
+  {id:524,cat:"feed",side:"Droit",ts:"2026-06-21T19:58:00Z",duration:14,author:"carnet"},
+  {id:525,cat:"feed",side:"Gauche",ts:"2026-06-21T20:36:00Z",duration:24,author:"carnet"},
+  {id:600,cat:"diaper_wet",ts:"2026-06-22T03:30:00Z",author:"carnet"},
+  {id:601,cat:"diaper_poo",ts:"2026-06-22T03:30:00Z",author:"carnet"},
+  {id:602,cat:"feed",side:"Gauche",ts:"2026-06-22T04:00:00Z",author:"carnet"},
+  {id:603,cat:"feed",side:"Droit",ts:"2026-06-22T04:24:00Z",author:"carnet"},
+  {id:604,cat:"feed",side:"Gauche",ts:"2026-06-22T04:45:00Z",author:"carnet"},
+  {id:605,cat:"diaper_wet",ts:"2026-06-22T05:05:00Z",author:"carnet"},
+  {id:606,cat:"diaper_poo",ts:"2026-06-22T05:05:00Z",author:"carnet"},
+  {id:607,cat:"diaper_wet",ts:"2026-06-22T06:50:00Z",author:"carnet"},
+  {id:608,cat:"diaper_poo",ts:"2026-06-22T06:50:00Z",author:"carnet"},
   {id:609,cat:"vitamin",vitaminDone:true,ts:"2026-06-22T06:50:00Z",note:"nombril",author:"carnet"},
-  // 09h00 sein gauche + 09h15 sein droit + 09h30
-  {id:610,cat:"feed",side:"Gauche",  ts:"2026-06-22T07:00:00Z",author:"carnet"},
-  {id:611,cat:"feed",side:"Droit",   ts:"2026-06-22T07:15:00Z",author:"carnet"},
-  {id:612,cat:"feed",side:"Gauche",  ts:"2026-06-22T07:30:00Z",author:"carnet"},
-  // 10h05 pipi + caca
-  {id:613,cat:"diaper_wet",          ts:"2026-06-22T08:05:00Z",author:"carnet"},
-  {id:614,cat:"diaper_poo",          ts:"2026-06-22T08:05:00Z",author:"carnet"},
-  // 3,400 kg
-  {id:615,cat:"weight",weight:3.40,  ts:"2026-06-22T08:05:00Z",author:"carnet"},
-  // 11h25 sein droit + 11h50 gauche
-  {id:616,cat:"feed",side:"Droit",   ts:"2026-06-22T09:25:00Z",author:"carnet"},
-  {id:617,cat:"feed",side:"Gauche",  ts:"2026-06-22T09:50:00Z",author:"carnet"},
-  // 11h47 caca + pipi
-  {id:618,cat:"diaper_wet",          ts:"2026-06-22T09:47:00Z",author:"carnet"},
-  {id:619,cat:"diaper_poo",          ts:"2026-06-22T09:47:00Z",author:"carnet"},
+  {id:610,cat:"feed",side:"Gauche",ts:"2026-06-22T07:00:00Z",author:"carnet"},
+  {id:611,cat:"feed",side:"Droit",ts:"2026-06-22T07:15:00Z",author:"carnet"},
+  {id:612,cat:"feed",side:"Gauche",ts:"2026-06-22T07:30:00Z",author:"carnet"},
+  {id:613,cat:"diaper_wet",ts:"2026-06-22T08:05:00Z",author:"carnet"},
+  {id:614,cat:"diaper_poo",ts:"2026-06-22T08:05:00Z",author:"carnet"},
+  {id:615,cat:"weight",weight:3.40,ts:"2026-06-22T08:05:00Z",author:"carnet"},
+  {id:616,cat:"feed",side:"Droit",ts:"2026-06-22T09:25:00Z",author:"carnet"},
+  {id:617,cat:"feed",side:"Gauche",ts:"2026-06-22T09:50:00Z",author:"carnet"},
+  {id:618,cat:"diaper_wet",ts:"2026-06-22T09:47:00Z",author:"carnet"},
+  {id:619,cat:"diaper_poo",ts:"2026-06-22T09:47:00Z",author:"carnet"},
 ];
 
-const DEFAULT = {babyName:"Rose",birthDate:"2026-06-15",entries:PRELOAD};
+const DEFAULT={babyName:"Rose",birthDate:"2026-06-15",entries:PRELOAD};
 
 function fmtTime(iso){return new Date(iso).toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});}
 function fmtDate(iso){
-  const d=new Date(iso), now=new Date();
+  const d=new Date(iso),now=new Date();
   const ds=d.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});
   const ns=now.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});
   const ys=new Date(now-86400000).toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});
-  if(ds===ns)return"Aujourd'hui"; if(ds===ys)return"Hier";
+  if(ds===ns)return"Aujourd'hui";if(ds===ys)return"Hier";
   return d.toLocaleDateString("fr-CH",{weekday:"short",day:"numeric",month:"short",timeZone:"Europe/Zurich"});
 }
 function durLabel(m){if(!m)return"";return m<60?`${m} min`:`${Math.floor(m/60)}h${String(m%60).padStart(2,"0")}`;}
+function timeAgo(iso){
+  const m=Math.round((Date.now()-new Date(iso))/60000);
+  if(m<1)return"à l'instant";if(m<60)return`il y a ${m} min`;
+  const h=Math.floor(m/60),rm=m%60;
+  return rm>0?`il y a ${h}h${String(rm).padStart(2,"0")}`:`il y a ${h}h`;
+}
 function dateZH(iso){return new Date(iso).toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});}
+function todayZH(){return new Date().toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});}
+
+// Groupe les tétées G+D successives (< 30min) en une seule session
+function groupFeeds(entries){
+  const feeds=[...entries].filter(e=>e.cat==="feed").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const sessions=[];
+  let i=0;
+  while(i<feeds.length){
+    const cur=feeds[i];
+    if(i+1<feeds.length){
+      const next=feeds[i+1];
+      const diffMin=(new Date(next.ts)-new Date(cur.ts))/60000;
+      const sides=new Set([cur.side,next.side]);
+      if(diffMin<=30&&sides.has("Gauche")&&sides.has("Droit")){
+        sessions.push({...cur,side:"Les deux",_merged:true,_end:next.ts});
+        i+=2;continue;
+      }
+    }
+    sessions.push(cur);i++;
+  }
+  return sessions;
+}
+
 function groupByDay(entries){
   const g={};
   [...entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).forEach(e=>{
-    const k=dateZH(e.ts); if(!g[k])g[k]=[]; g[k].push(e);
+    const k=dateZH(e.ts);if(!g[k])g[k]=[];g[k].push(e);
   });
   return g;
+}
+
+// Check soins du matin (vitamines + nombril)
+function checkMorningSoins(entries){
+  const today=todayZH();
+  const todayE=entries.filter(e=>dateZH(e.ts)===today);
+  const vitDone=todayE.some(e=>e.cat==="vitamin"&&e.vitaminDone);
+  const nombrilDone=todayE.some(e=>e.cat==="nombril");
+  return{vitDone,nombrilDone};
 }
 
 const Btn=({color,children,onClick,style={}})=>(
@@ -293,138 +269,123 @@ const iSt={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 12px",f
 const Inp=({label,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><input {...p} style={iSt}/></label>);
 const Sel=({label,children,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><select {...p} style={iSt}>{children}</select></label>);
 
-function FeedForm({onSave}){
-  const[side,setSide]=useState("Gauche");
-  const[dur,setDur]=useState("");
-  const[qty,setQty]=useState("");
-  const[ts,setTs]=useState(localNow());
+// ─── Formulaires ──────────────────────────────────────────────────────────────
+function FeedForm({onSave,initial}){
+  const[side,setSide]=useState(initial?.side||"Gauche");
+  const[dur,setDur]=useState(initial?.duration||"");
+  const[qty,setQty]=useState(initial?.quantity||"");
+  const[note,setNote]=useState(initial?.note||"");
+  const[ts,setTs]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow());
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Sel label="Sein" value={side} onChange={e=>setSide(e.target.value)}><option>Gauche</option><option>Droit</option><option>Les deux</option><option>Biberon</option></Sel>
     <Inp label="Durée (min)" type="number" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
     <Inp label="Quantité ml (biberon)" type="number" min="0" value={qty} onChange={e=>setQty(e.target.value)} placeholder="optionnel"/>
+    <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={C.accent} onClick={()=>onSave({cat:"feed",side,duration:dur?+dur:null,quantity:qty?+qty:null,ts:new Date(ts).toISOString()})}>Enregistrer</Btn>
+    <Btn color={C.accent} onClick={()=>onSave({cat:"feed",side,duration:dur?+dur:null,quantity:qty?+qty:null,note:note||undefined,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
-function DiaperForm({type,onSave}){
-  const[ts,setTs]=useState(localNow());
-  const[pc,setPc]=useState(POO_COLORS[0]);
-  const[pt,setPt]=useState(POO_TEX[0]);
+function DiaperForm({type,onSave,initial}){
+  const initTs=initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow();
+  const[ts,setTs]=useState(initTs);
+  const[pc,setPc]=useState(initial?.pooColor||POO_COLORS[0]);
+  const[pt,setPt]=useState(initial?.pooTex||POO_TEX[0]);
+  const isPoo=type==="diaper_poo"||type==="diaper_both";
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    {type==="diaper_poo"&&<><Sel label="Couleur" value={pc} onChange={e=>setPc(e.target.value)}>{POO_COLORS.map(c=><option key={c}>{c}</option>)}</Sel><Sel label="Texture" value={pt} onChange={e=>setPt(e.target.value)}>{POO_TEX.map(t=><option key={t}>{t}</option>)}</Sel></>}
+    {isPoo&&<><Sel label="Couleur" value={pc} onChange={e=>setPc(e.target.value)}>{POO_COLORS.map(c=><option key={c}>{c}</option>)}</Sel><Sel label="Texture" value={pt} onChange={e=>setPt(e.target.value)}>{POO_TEX.map(t=><option key={t}>{t}</option>)}</Sel></>}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={type==="diaper_poo"?C.golden:C.sky} onClick={()=>onSave({cat:type,pooColor:type==="diaper_poo"?pc:undefined,pooTex:type==="diaper_poo"?pt:undefined,ts:new Date(ts).toISOString()})}>Enregistrer</Btn>
+    <Btn color={isPoo?C.golden:C.sky} onClick={()=>onSave({cat:type,pooColor:isPoo?pc:undefined,pooTex:isPoo?pt:undefined,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
-function SleepForm({onSave}){
-  const[start,setStart]=useState(localHoursBefore(1));
+function SleepForm({onSave,initial}){
+  const[start,setStart]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localHoursBefore(1));
   const[end,setEnd]=useState(localNow());
   const dur=Math.max(0,Math.round((new Date(end)-new Date(start))/60000));
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Inp label="Début" type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/>
     <Inp label="Fin" type="datetime-local" value={end} onChange={e=>setEnd(e.target.value)}/>
     {dur>0&&<div style={{fontSize:13,color:C.lavender,fontWeight:600}}>Durée : {durLabel(dur)}</div>}
-    <Btn color={C.lavender} onClick={()=>onSave({cat:"sleep",duration:dur,ts:new Date(start).toISOString()})}>Enregistrer</Btn>
+    <Btn color={C.lavender} onClick={()=>onSave({cat:"sleep",duration:dur,ts:new Date(start).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
-function WeightForm({onSave}){
-  const[w,setW]=useState("");
-  const[ts,setTs]=useState(localNow());
+function WeightForm({onSave,initial}){
+  const[w,setW]=useState(initial?.weight||"");
+  const[ts,setTs]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow());
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Inp label="Poids (kg)" type="number" step="0.001" min="0" value={w} onChange={e=>setW(e.target.value)} placeholder="ex: 3.400"/>
     <Inp label="Date/heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={C.sage} onClick={()=>w&&onSave({cat:"weight",weight:+w,ts:new Date(ts).toISOString()})}>Enregistrer</Btn>
+    <Btn color={C.sage} onClick={()=>w&&onSave({cat:"weight",weight:+w,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
-function TempForm({onSave}){
-  const[t,setT]=useState("");
-  const[ts,setTs]=useState(localNow());
+function TempForm({onSave,initial}){
+  const[t,setT]=useState(initial?.temp||"");
+  const[ts,setTs]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow());
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Inp label="Température (°C)" type="number" step="0.1" min="35" max="42" value={t} onChange={e=>setT(e.target.value)} placeholder="ex: 37.2"/>
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     {t&&+t>38&&<div style={{background:C.redLight,borderRadius:10,padding:"8px 12px",fontSize:13,color:C.red,fontWeight:600}}>⚠️ Fièvre — consultez votre pédiatre</div>}
-    <Btn color={C.red} onClick={()=>t&&onSave({cat:"temperature",temp:+t,ts:new Date(ts).toISOString()})}>Enregistrer</Btn>
+    <Btn color={C.red} onClick={()=>t&&onSave({cat:"temperature",temp:+t,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
-function SimpleForm({cat,color,onSave}){
-  const[ts,setTs]=useState(localNow());
-  const[note,setNote]=useState("");
-  const[mood,setMood]=useState(MOODS[0]);
+function SimpleForm({cat,color,onSave,initial}){
+  const[ts,setTs]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow());
+  const[note,setNote]=useState(initial?.note||"");
+  const[mood,setMood]=useState(initial?.mood||MOODS[0]);
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     {cat==="mood"&&(<div><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Humeur</div><div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{MOODS.map(m=><button key={m} onClick={()=>setMood(m)} style={{fontSize:28,background:mood===m?C.sageLight:"none",border:`2px solid ${mood===m?C.sage:C.border}`,borderRadius:12,padding:"4px 8px",cursor:"pointer"}}>{m}</button>)}</div></div>)}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     <Inp label="Note (optionnel)" value={note} onChange={e=>setNote(e.target.value)} placeholder="..."/>
-    <Btn color={color} onClick={()=>onSave({cat,mood:cat==="mood"?mood:undefined,note:note||undefined,vitaminDone:cat==="vitamin"?true:undefined,ts:new Date(ts).toISOString()})}>Enregistrer</Btn>
+    <Btn color={color} onClick={()=>onSave({cat,mood:cat==="mood"?mood:undefined,note:note||undefined,vitaminDone:cat==="vitamin"?true:undefined,ts:new Date(ts).toISOString()})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 
-// ─── Import manuel guidé (Option A) ──────────────────────────────────────────
 function ImportForm({onImport}){
   const[date,setDate]=useState(localNow().slice(0,10));
   const[rows,setRows]=useState([{time:"",type:"feed",side:"Gauche",note:""}]);
-
   function addRow(){setRows(r=>[...r,{time:"",type:"feed",side:"Gauche",note:""}]);}
   function removeRow(i){setRows(r=>r.filter((_,j)=>j!==i));}
-  function updateRow(i,k,v){setRows(r=>r.map((row,j)=>j===i?{...row,[k]:v}:row));}
-
+  function upd(i,k,v){setRows(r=>r.map((row,j)=>j===i?{...row,[k]:v}:row));}
   function doImport(){
     const entries=[];
     rows.forEach((row,i)=>{
       if(!row.time)return;
       const ts=new Date(`${date}T${row.time}:00+02:00`).toISOString();
       const id=Date.now()+i+Math.random();
-      if(row.type==="feed"){
-        entries.push({id,cat:"feed",side:row.side,note:row.note||undefined,ts,author:"carnet"});
-      } else if(row.type==="pipi"){
-        entries.push({id,cat:"diaper_wet",note:row.note||undefined,ts,author:"carnet"});
-      } else if(row.type==="caca"){
-        entries.push({id:id+0.1,cat:"diaper_poo",note:row.note||undefined,ts,author:"carnet"});
-      } else if(row.type==="pipi+caca"){
-        entries.push({id:id+0.2,cat:"diaper_wet",ts,author:"carnet"});
-        entries.push({id:id+0.3,cat:"diaper_poo",ts,author:"carnet"});
-      } else if(row.type==="vitamine"){
-        entries.push({id,cat:"vitamin",vitaminDone:true,note:row.note||undefined,ts,author:"carnet"});
-      } else if(row.type==="poids"){
-        const w=parseFloat(row.note);
-        if(!isNaN(w))entries.push({id,cat:"weight",weight:w,ts,author:"carnet"});
-      } else if(row.type==="note"){
-        entries.push({id,cat:"note",note:row.note||"",ts,author:"carnet"});
-      }
+      if(row.type==="feed")entries.push({id,cat:"feed",side:row.side,note:row.note||undefined,ts,author:"carnet"});
+      else if(row.type==="pipi")entries.push({id,cat:"diaper_wet",ts,author:"carnet"});
+      else if(row.type==="caca")entries.push({id,cat:"diaper_poo",ts,author:"carnet"});
+      else if(row.type==="pipi+caca"){entries.push({id:id+0.1,cat:"diaper_wet",ts,author:"carnet"});entries.push({id:id+0.2,cat:"diaper_poo",ts,author:"carnet"});}
+      else if(row.type==="vitamine")entries.push({id,cat:"vitamin",vitaminDone:true,note:row.note||undefined,ts,author:"carnet"});
+      else if(row.type==="nombril")entries.push({id,cat:"nombril",ts,author:"carnet"});
+      else if(row.type==="nez")entries.push({id,cat:"nez",ts,author:"carnet"});
+      else if(row.type==="poids"){const w=parseFloat(row.note);if(!isNaN(w))entries.push({id,cat:"weight",weight:w,ts,author:"carnet"});}
+      else if(row.type==="note")entries.push({id,cat:"note",note:row.note||"",ts,author:"carnet"});
     });
-    if(entries.length>0){onImport(entries); setRows([{time:"",type:"feed",side:"Gauche",note:""}]);}
+    if(entries.length>0){onImport(entries);setRows([{time:"",type:"feed",side:"Gauche",note:""}]);}
   }
-
-  const types=[["feed","🤱 Allaitement"],["pipi","💧 Pipi"],["caca","💩 Caca"],["pipi+caca","💧💩 Pipi+Caca"],["vitamine","💊 Vitamine"],["poids","⚖️ Poids (kg)"],["note","📝 Note"]];
-
+  const types=[["feed","🤱 Allaitement"],["pipi","💧 Pipi"],["caca","💩 Caca"],["pipi+caca","💧💩 Pipi+Caca"],["vitamine","💊 Vitamine"],["nombril","🌀 Nombril"],["nez","👃 Rinçage nez"],["poids","⚖️ Poids (kg)"],["note","📝 Note"]];
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Inp label="Date" type="date" value={date} onChange={e=>setDate(e.target.value)}/>
-    {rows.map((row,i)=>(
-      <div key={i} style={{background:C.bg,borderRadius:12,padding:12,border:`1px solid ${C.border}`,display:"flex",flexDirection:"column",gap:8}}>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <input type="time" value={row.time} onChange={e=>updateRow(i,"time",e.target.value)} style={{...iSt,width:110,flexShrink:0}}/>
-          <select value={row.type} onChange={e=>updateRow(i,"type",e.target.value)} style={{...iSt,flex:1}}>{types.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
-          <button onClick={()=>removeRow(i)} style={{background:"none",border:"none",fontSize:20,color:C.muted,cursor:"pointer",flexShrink:0}}>×</button>
-        </div>
-        {row.type==="feed"&&(
-          <select value={row.side} onChange={e=>updateRow(i,"side",e.target.value)} style={iSt}>
-            <option>Gauche</option><option>Droit</option><option>Les deux</option><option>Biberon</option>
-          </select>
-        )}
-        {(row.type==="poids"||row.type==="note")&&(
-          <input value={row.note} onChange={e=>updateRow(i,"note",e.target.value)} placeholder={row.type==="poids"?"ex: 3.400":"remarque..."} style={iSt}/>
-        )}
+    {rows.map((row,i)=>(<div key={i} style={{background:C.bg,borderRadius:12,padding:12,border:`1px solid ${C.border}`,display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <input type="time" value={row.time} onChange={e=>upd(i,"time",e.target.value)} style={{...iSt,width:110,flexShrink:0}}/>
+        <select value={row.type} onChange={e=>upd(i,"type",e.target.value)} style={{...iSt,flex:1}}>{types.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
+        <button onClick={()=>removeRow(i)} style={{background:"none",border:"none",fontSize:20,color:C.muted,cursor:"pointer",flexShrink:0}}>×</button>
       </div>
-    ))}
+      {row.type==="feed"&&<select value={row.side} onChange={e=>upd(i,"side",e.target.value)} style={iSt}><option>Gauche</option><option>Droit</option><option>Les deux</option><option>Biberon</option></select>}
+      {(row.type==="poids"||row.type==="note")&&<input value={row.note} onChange={e=>upd(i,"note",e.target.value)} placeholder={row.type==="poids"?"ex: 3.400":"remarque..."} style={iSt}/>}
+    </div>))}
     <button onClick={addRow} style={{background:"none",border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"10px",color:C.muted,fontWeight:600,cursor:"pointer",fontSize:14}}>+ Ajouter une ligne</button>
     <Btn color={C.accent} onClick={doImport}>Importer {rows.filter(r=>r.time).length} entrée(s)</Btn>
   </div>);
 }
 
-function EntryCard({entry,onDelete}){
-  const cat=CATS[entry.cat];
+// ─── EntryCard avec édition ───────────────────────────────────────────────────
+function EntryCard({entry,onDelete,onEdit}){
+  const cat=CATS[entry.cat]||CATS.note;
   const[confirm,setConfirm]=useState(false);
   const parts=[];
-  if(entry.side)parts.push(`Sein : ${entry.side}`);
+  if(entry.side)parts.push(entry.side==="Les deux"?"Les deux seins":`Sein ${entry.side}`);
   if(entry.duration)parts.push(durLabel(entry.duration));
   if(entry.quantity)parts.push(`${entry.quantity} ml`);
   if(entry.weight)parts.push(`${entry.weight} kg`);
@@ -435,91 +396,152 @@ function EntryCard({entry,onDelete}){
   if(entry.vitaminDone)parts.push("✓");
   if(entry.note)parts.push(entry.note);
   if(entry.author)parts.push(`— ${entry.author}`);
-  return(
-    <div style={{background:C.surface,borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 16px",display:"flex",alignItems:"flex-start",gap:12,position:"relative"}}>
-      <div style={{width:40,height:40,borderRadius:12,background:cat.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{cat.emoji}</div>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          <span style={{fontWeight:700,fontSize:14}}>{cat.label}</span>
-          <span style={{fontSize:12,color:C.muted}}>{fmtTime(entry.ts)}</span>
-        </div>
-        {parts.length>0&&<div style={{fontSize:13,color:C.muted,marginTop:3}}>{parts.join(" · ")}</div>}
+  return(<div style={{background:C.surface,borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 16px",display:"flex",alignItems:"flex-start",gap:12,position:"relative"}}>
+    <div style={{width:40,height:40,borderRadius:12,background:cat.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{cat.emoji}</div>
+    <div style={{flex:1,minWidth:0}}>
+      <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+        <span style={{fontWeight:700,fontSize:14}}>{cat.label}</span>
+        <span style={{fontSize:12,color:C.muted}}>{fmtTime(entry.ts)}</span>
       </div>
-      <button onClick={()=>setConfirm(true)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:20,padding:"0 2px",flexShrink:0}}>×</button>
-      {confirm&&(<div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
-        <span style={{fontSize:13}}>Supprimer ?</span>
-        <Btn color={C.accent} onClick={()=>onDelete(entry.id)}>Oui</Btn>
-        <Btn color={C.muted} onClick={()=>setConfirm(false)}>Non</Btn>
-      </div>)}
+      {parts.length>0&&<div style={{fontSize:13,color:C.muted,marginTop:3}}>{parts.join(" · ")}</div>}
     </div>
-  );
+    <div style={{display:"flex",gap:4,flexShrink:0}}>
+      <button onClick={()=>onEdit(entry)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:16,padding:"0 3px"}}>✏️</button>
+      <button onClick={()=>setConfirm(true)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:20,padding:"0 2px"}}>×</button>
+    </div>
+    {confirm&&(<div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
+      <span style={{fontSize:13}}>Supprimer ?</span>
+      <Btn color={C.accent} onClick={()=>onDelete(entry.id)}>Oui</Btn>
+      <Btn color={C.muted} onClick={()=>setConfirm(false)}>Non</Btn>
+    </div>)}
+  </div>);
 }
 
+// ─── Stats + dernières entrées ────────────────────────────────────────────────
 function TodayStats({entries}){
   const now=new Date();
   const since=new Date(now.getTime()-24*3600000);
   const te=entries.filter(e=>new Date(e.ts)>=since);
-  const feeds=te.filter(e=>e.cat==="feed");
-  const feedMin=feeds.reduce((s,e)=>s+(e.duration||0),0);
-  const wet=te.filter(e=>e.cat==="diaper_wet").length;
-  const poo=te.filter(e=>e.cat==="diaper_poo").length;
+
+  // Allaitement : grouper G+D successifs
+  const feedSessions=groupFeeds(te);
+  const feedMin=feedSessions.reduce((s,e)=>s+(e.duration||0),0);
+  const wet=te.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").length;
+  const poo=te.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").length;
   const sleepMin=te.filter(e=>e.cat==="sleep").reduce((s,e)=>s+(e.duration||0),0);
   const lastW=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+
+  // Dernières entrées par type
+  const lastFeed=entries.filter(e=>e.cat==="feed").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+  const lastWet=entries.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+  const lastPoo=entries.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+
+  const {vitDone,nombrilDone}=checkMorningSoins(entries);
   const heure=now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});
+
   const SC=({emoji,label,value,sub,color,bg})=>(
-    <div style={{background:bg||C.surface,borderRadius:16,padding:"14px 16px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`}}>
-      <div style={{fontSize:20}}>{emoji}</div>
+    <div style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`}}>
+      <div style={{fontSize:18}}>{emoji}</div>
       <div style={{fontSize:20,fontWeight:700,color:color||C.text}}>{value}</div>
       <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{label}</div>
-      {sub&&<div style={{fontSize:11,color:C.muted}}>{sub}</div>}
+      {sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}
     </div>
   );
-  return(<div>
-    <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:10}}>
+
+  return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>Dernières 24h</div>
       <div style={{fontSize:13,fontWeight:600,color:C.accent}}>🕐 {heure}</div>
     </div>
+
+    {/* Check soins matin */}
+    <div style={{display:"flex",gap:8}}>
+      <div style={{flex:1,background:vitDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:vitDone?C.sage:C.red,textAlign:"center"}}>
+        💊 Vitamines {vitDone?"✓":"⚠️ à faire"}
+      </div>
+      <div style={{flex:1,background:nombrilDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:nombrilDone?C.sage:C.red,textAlign:"center"}}>
+        🌀 Nombril {nombrilDone?"✓":"⚠️ à faire"}
+      </div>
+    </div>
+
     <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-      <SC emoji="🤱" label="Tétées" value={feeds.length} sub={feedMin?durLabel(feedMin):"—"} color={C.accent} bg={C.accentLight}/>
-      <SC emoji="💧" label="Pipi" value={wet} color={C.sky} bg={C.skyLight}/>
-      <SC emoji="💩" label="Caca" value={poo} color={C.golden} bg={C.goldenLight}/>
+      <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight}/>
+      <SC emoji="💧" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight}/>
+      <SC emoji="💩" label="Caca" value={poo} sub={lastPoo?timeAgo(lastPoo.ts):null} color={C.golden} bg={C.goldenLight}/>
       <SC emoji="😴" label="Sommeil" value={sleepMin?durLabel(sleepMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
       {lastW&&<SC emoji="⚖️" label="Poids" value={`${lastW.weight} kg`} color={C.sage} bg={C.sageLight}/>}
     </div>
   </div>);
 }
 
-function Journal({entries,onDelete}){
+function Journal({entries,onDelete,onEdit}){
   const groups=groupByDay(entries);
   if(!entries.length)return<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.<br/><span style={{fontSize:32}}>👶</span></div>;
   return(<div style={{display:"flex",flexDirection:"column",gap:22}}>
-    {Object.entries(groups).map(([day,es])=>(
-      <div key={day}>
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:8}}>{fmtDate(es[0].ts)}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>{es.map(e=><EntryCard key={e.id} entry={e} onDelete={onDelete}/>)}</div>
-      </div>
-    ))}
+    {Object.entries(groups).map(([day,es])=>(<div key={day}>
+      <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:8}}>{fmtDate(es[0].ts)}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>{es.map(e=><EntryCard key={e.id} entry={e} onDelete={onDelete} onEdit={onEdit}/>)}</div>
+    </div>))}
   </div>);
+}
+
+function fmtShortDate(iso){
+  const d=new Date(iso);
+  const day=String(d.toLocaleDateString("fr-CH",{day:"numeric",timeZone:"Europe/Zurich"})).padStart(2,"0");
+  const month=String(d.toLocaleDateString("fr-CH",{month:"numeric",timeZone:"Europe/Zurich"})).padStart(2,"0");
+  return`${day}.${month}`;
 }
 
 function WeightChart({entries}){
   const ws=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
   if(ws.length<2)return<div style={{color:C.muted,textAlign:"center",padding:"40px 0"}}>Ajoutez au moins 2 pesées.</div>;
-  const W=300,H=160,PX=44,PY=20;
+
+  const PX=48,PY=24,PB=28;
+  const minPts=Math.max(ws.length,6);
+  const W=Math.max(320,minPts*60);
+  const H=220;
+  const innerW=W-PX*2;
+  const innerH=H-PY-PB;
+
   const minW=Math.min(...ws.map(e=>e.weight))-0.05;
   const maxW=Math.max(...ws.map(e=>e.weight))+0.05;
-  const toX=i=>PX+(i/(ws.length-1))*(W-PX*2);
-  const toY=w=>PY+(1-(w-minW)/(maxW-minW))*(H-PY*2);
+  const toX=i=>PX+i*(innerW/(ws.length-1));
+  const toY=w=>PY+(1-(w-minW)/(maxW-minW))*innerH;
+
   const pts=ws.map((e,i)=>({x:toX(i),y:toY(e.weight),w:e.weight,ts:e.ts}));
   const path=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const area=`${path} L${pts[pts.length-1].x},${PY+innerH} L${pts[0].x},${PY+innerH} Z`;
+
+  // Graduations axe Y
+  const yTicks=4;
+  const yVals=Array.from({length:yTicks+1},(_,i)=>minW+(maxW-minW)*i/yTicks);
+
   return(<div>
     <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Courbe de poids</div>
-    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",maxWidth:W}}>
-      <rect width={W} height={H} fill={C.bg} rx={14}/>
-      {[minW,(minW+maxW)/2,maxW].map((v,i)=>(<g key={i}><line x1={PX} y1={toY(v)} x2={W-PX} y2={toY(v)} stroke={C.border} strokeDasharray="4 3"/><text x={PX-4} y={toY(v)+4} fontSize={9} fill={C.muted} textAnchor="end">{v.toFixed(2)}</text></g>))}
-      <path d={path} fill="none" stroke={C.sage} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>
-      {pts.map((p,i)=>(<g key={i}><circle cx={p.x} cy={p.y} r={5} fill={C.sage}/><text x={p.x} y={p.y-9} fontSize={10} fill={C.sage} textAnchor="middle" fontWeight={700}>{p.w.toFixed(3)}</text><text x={p.x} y={H-4} fontSize={9} fill={C.muted} textAnchor="middle">{fmtDate(p.ts)}</text></g>))}
-    </svg>
+    <div style={{overflowX:"auto",overflowY:"hidden",WebkitOverflowScrolling:"touch",margin:"0 -16px",padding:"0 16px"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.max(W,window.innerWidth-32),minWidth:W,height:H,display:"block"}}>
+        <rect width={W} height={H} fill={C.bg} rx={14}/>
+        {/* Grid + Y labels */}
+        {yVals.map((v,i)=>(
+          <g key={i}>
+            <line x1={PX} y1={toY(v)} x2={W-PX} y2={toY(v)} stroke={C.border} strokeDasharray="4 3" strokeWidth={0.8}/>
+            <text x={PX-6} y={toY(v)+4} fontSize={9} fill={C.muted} textAnchor="end">{v.toFixed(3)}</text>
+          </g>
+        ))}
+        {/* Area fill */}
+        <path d={area} fill={C.sage} fillOpacity={0.08}/>
+        {/* Line */}
+        <path d={path} fill="none" stroke={C.sage} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>
+        {/* Points + labels */}
+        {pts.map((p,i)=>(
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r={5} fill={C.sage} stroke="#fff" strokeWidth={1.5}/>
+            <text x={p.x} y={p.y-11} fontSize={10} fill={C.sage} textAnchor="middle" fontWeight={700}>{p.w.toFixed(3)}</text>
+            <text x={p.x} y={H-8} fontSize={9} fill={C.muted} textAnchor="middle">{fmtShortDate(p.ts)}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
   </div>);
 }
 
@@ -540,10 +562,11 @@ function Settings({data,onUpdate,syncStatus}){
   </div>);
 }
 
+// ─── App ──────────────────────────────────────────────────────────────────────
 function App(){
   const[data,setData]=useState(DEFAULT);
   const[tab,setTab]=useState("home");
-  const[modal,setModal]=useState(null);
+  const[modal,setModal]=useState(null); // {type, entry?}
   const[syncStatus,setSyncStatus]=useState("syncing");
   const saveTimer=useRef(null);
 
@@ -571,7 +594,7 @@ function App(){
   },[]);
 
   function persist(next){
-    setData(next); setSyncStatus("syncing");
+    setData(next);setSyncStatus("syncing");
     clearTimeout(saveTimer.current);
     saveTimer.current=setTimeout(()=>{
       fbWrite(next).then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("error"));
@@ -579,11 +602,19 @@ function App(){
   }
 
   const author=()=>{try{return localStorage.getItem("bt_author")||"";}catch{return"";}};
+
   function addEntry(payload){
     const entry={id:Date.now()+Math.random(),...payload,author:author()||undefined};
     persist({...data,entries:[entry,...data.entries]});
     setModal(null);
   }
+
+  function editEntry(payload){
+    const updated=data.entries.map(e=>e.id===modal.entry.id?{...e,...payload}:e);
+    persist({...data,entries:updated});
+    setModal(null);
+  }
+
   function importEntries(entries){
     persist({...data,entries:[...entries,...data.entries]});
     setModal(null);
@@ -599,84 +630,103 @@ function App(){
     return`${Math.floor(days/30)} mois`;
   }
 
+  const isEditing=modal&&modal.entry;
+  const modalType=modal?.type;
+  const modalEntry=modal?.entry;
+
   const QUICK=[
-    ["feed",C.accent],["diaper_wet",C.sky],["diaper_poo",C.golden],
-    ["sleep",C.lavender],["vitamin",C.accent],["bath",C.sky],
-    ["weight",C.sage],["temperature",C.red],["mood",C.sage],["note",C.muted],
+    {cat:"feed",    color:C.accent},
+    {cat:"diaper_wet", color:C.sky},
+    {cat:"diaper_poo", color:C.golden},
+    {cat:"diaper_both",color:C.golden},
+    {cat:"sleep",   color:C.lavender},
+    {cat:"vitamin", color:C.accent},
+    {cat:"nombril", color:C.teal},
+    {cat:"nez",     color:C.sky},
+    {cat:"weight",  color:C.sage},
+    {cat:"temperature",color:C.red},
+    {cat:"note",    color:C.muted},
   ];
+
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
 
-  return(
-    <div style={{background:C.bg,minHeight:"100vh",color:C.text}}>
-      <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"14px 20px 12px",position:"sticky",top:0,zIndex:40}}>
-        <div style={{maxWidth:480,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div>
-            <div style={{fontSize:20,fontWeight:800,color:C.accent}}>🌸 {data.babyName}</div>
-            {ageLabel()&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>{ageLabel()}</div>}
-          </div>
-          <span style={{fontSize:18}}>{syncDot}</span>
+  function openModal(cat){setModal({type:cat});}
+  function openEdit(entry){setModal({type:entry.cat,entry});}
+
+  function handleSave(payload){
+    if(isEditing)editEntry(payload);
+    else addEntry(payload);
+  }
+
+  return(<div style={{background:C.bg,minHeight:"100vh",color:C.text}}>
+    <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"14px 20px 12px",position:"sticky",top:0,zIndex:40}}>
+      <div style={{maxWidth:480,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div>
+          <div style={{fontSize:20,fontWeight:800,color:C.accent}}>🌸 {data.babyName}</div>
+          {ageLabel()&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>{ageLabel()}</div>}
         </div>
+        <span style={{fontSize:18}}>{syncDot}</span>
       </div>
-
-      <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px 100px"}}>
-        {tab==="home"&&(<div style={{display:"flex",flexDirection:"column",gap:24}}>
-          <TodayStats entries={data.entries}/>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Ajouter</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
-              {QUICK.map(([cat,color])=>{const c=CATS[cat];return(
-                <button key={cat} onClick={()=>setModal(cat)} style={{background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"10px 4px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                  <span style={{fontSize:22}}>{c.emoji}</span>
-                  <span style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{c.label}</span>
-                </button>
-              );})}
-            </div>
-          </div>
-          <button onClick={()=>setModal("import")} style={{background:C.surface,border:`1.5px dashed ${C.accent}`,borderRadius:14,padding:"12px",cursor:"pointer",color:C.accent,fontWeight:700,fontSize:14}}>
-            📋 Importer depuis le carnet
-          </button>
-          {sorted.length>0&&(<div>
-            <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Récent</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>{sorted.slice(0,5).map(e=><EntryCard key={e.id} entry={e} onDelete={deleteEntry}/>)}</div>
-            {sorted.length>5&&<button onClick={()=>setTab("journal")} style={{background:"none",border:"none",color:C.accent,fontWeight:700,cursor:"pointer",marginTop:8,fontSize:14}}>Voir tout le journal →</button>}
-          </div>)}
-        </div>)}
-        {tab==="journal"&&<Journal entries={data.entries} onDelete={deleteEntry}/>}
-        {tab==="weight"&&<WeightChart entries={data.entries}/>}
-        {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
-      </div>
-
-      <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0 20px",zIndex:50}}>
-        {[["home","🏠","Accueil"],["journal","📋","Journal"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].map(([t,emoji,label])=>(
-          <button key={t} onClick={()=>setTab(t)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===t?C.accent:C.muted,fontWeight:tab===t?700:400,fontSize:11}}>
-            <span style={{fontSize:22}}>{emoji}</span>{label}
-          </button>
-        ))}
-      </div>
-
-      {modal&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}}
-          onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
-          <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <div style={{fontSize:18,fontWeight:800}}>
-                {modal==="import"?"📋 Import carnet":<>{CATS[modal]?.emoji} {CATS[modal]?.label}</>}
-              </div>
-              <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
-            </div>
-            {modal==="feed"&&<FeedForm onSave={addEntry}/>}
-            {(modal==="diaper_wet"||modal==="diaper_poo")&&<DiaperForm type={modal} onSave={addEntry}/>}
-            {modal==="sleep"&&<SleepForm onSave={addEntry}/>}
-            {modal==="weight"&&<WeightForm onSave={addEntry}/>}
-            {modal==="temperature"&&<TempForm onSave={addEntry}/>}
-            {(modal==="vitamin"||modal==="bath"||modal==="mood"||modal==="note")&&<SimpleForm cat={modal} color={CATS[modal].color} onSave={addEntry}/>}
-            {modal==="import"&&<ImportForm onImport={importEntries}/>}
-          </div>
-        </div>
-      )}
     </div>
-  );
+
+    <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px 100px"}}>
+      {tab==="home"&&(<div style={{display:"flex",flexDirection:"column",gap:24}}>
+        <TodayStats entries={data.entries}/>
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Ajouter</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {QUICK.map(({cat})=>{const c=CATS[cat];return(
+              <button key={cat} onClick={()=>openModal(cat)} style={{background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"10px 4px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <span style={{fontSize:22}}>{c.emoji}</span>
+                <span style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{c.label}</span>
+              </button>
+            );})}
+          </div>
+        </div>
+        <button onClick={()=>setModal({type:"import"})} style={{background:C.surface,border:`1.5px dashed ${C.accent}`,borderRadius:14,padding:"12px",cursor:"pointer",color:C.accent,fontWeight:700,fontSize:14}}>
+          📋 Importer depuis le carnet
+        </button>
+        {sorted.length>0&&(<div>
+          <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Récent</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>{sorted.slice(0,5).map(e=><EntryCard key={e.id} entry={e} onDelete={deleteEntry} onEdit={openEdit}/>)}</div>
+          {sorted.length>5&&<button onClick={()=>setTab("journal")} style={{background:"none",border:"none",color:C.accent,fontWeight:700,cursor:"pointer",marginTop:8,fontSize:14}}>Voir tout le journal →</button>}
+        </div>)}
+      </div>)}
+      {tab==="journal"&&<Journal entries={data.entries} onDelete={deleteEntry} onEdit={openEdit}/>}
+      {tab==="weight"&&<WeightChart entries={data.entries}/>}
+      {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
+    </div>
+
+    <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0 20px",zIndex:50}}>
+      {[["home","🏠","Accueil"],["journal","📋","Journal"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].map(([t,emoji,label])=>(
+        <button key={t} onClick={()=>setTab(t)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===t?C.accent:C.muted,fontWeight:tab===t?700:400,fontSize:11}}>
+          <span style={{fontSize:22}}>{emoji}</span>{label}
+        </button>
+      ))}
+    </div>
+
+    {modal&&(
+      <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}}
+        onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
+        <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+            <div style={{fontSize:18,fontWeight:800}}>
+              {modalType==="import"?"📋 Import carnet":isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}
+            </div>
+            <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
+          </div>
+          {modalType==="feed"&&<FeedForm onSave={handleSave} initial={modalEntry}/>}
+          {(modalType==="diaper_wet"||modalType==="diaper_poo"||modalType==="diaper_both")&&<DiaperForm type={modalType} onSave={handleSave} initial={modalEntry}/>}
+          {modalType==="sleep"&&<SleepForm onSave={handleSave} initial={modalEntry}/>}
+          {modalType==="weight"&&<WeightForm onSave={handleSave} initial={modalEntry}/>}
+          {modalType==="temperature"&&<TempForm onSave={handleSave} initial={modalEntry}/>}
+          {(modalType==="vitamin"||modalType==="bath"||modalType==="mood"||modalType==="note"||modalType==="nombril"||modalType==="nez")&&<SimpleForm cat={modalType} color={CATS[modalType].color} onSave={handleSave} initial={modalEntry}/>}
+          {modalType==="import"&&<ImportForm onImport={importEntries}/>}
+        </div>
+      </div>
+    )}
+  </div>);
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
