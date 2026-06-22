@@ -6,8 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Suivi Rose"/>
-<link rel="apple-touch-icon" href="https://domvoide.github.io/Suivi_Rose/icon.png"/>
-<link rel="apple-touch-icon-precomposed" href="https://domvoide.github.io/Suivi_Rose/icon.png"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%23F8E8EE'/%3E%3Ctext x='90' y='125' font-size='110' text-anchor='middle' font-family='serif'%3E%F0%9F%8C%B9%3C/text%3E%3C/svg%3E"/>
 <style>
   #splash{position:fixed;inset:0;background:#FBF7F4;display:flex;align-items:center;justify-content:center;z-index:9999;}
   #splash svg{width:120px;height:120px;}
@@ -43,6 +42,11 @@ function localHoursBefore(h){
   const n=new Date();
   const off=n.getTimezoneOffset();
   return new Date(n.getTime()-off*60000-h*3600000).toISOString().slice(0,16);
+}
+function isoToLocal(iso){
+  const d=new Date(iso);
+  const off=d.getTimezoneOffset();
+  return new Date(d.getTime()-off*60000).toISOString().slice(0,16);
 }
 
 const C={
@@ -292,7 +296,7 @@ function FeedForm({onSave,initial}){
   </div>);
 }
 function DiaperForm({type,onSave,initial}){
-  const initTs=initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow();
+  const initTs=initial?isoToLocal(initial.ts):localNow();
   const[ts,setTs]=useState(initTs);
   const[pc,setPc]=useState(initial?.pooColor||POO_COLORS[0]);
   const[pt,setPt]=useState(initial?.pooTex||POO_TEX[0]);
@@ -304,7 +308,7 @@ function DiaperForm({type,onSave,initial}){
   </div>);
 }
 function SleepForm({onSave,initial}){
-  const[start,setStart]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localHoursBefore(1));
+  const[start,setStart]=useState(initial?isoToLocal(initial.ts):localHoursBefore(1));
   const[end,setEnd]=useState(localNow());
   const dur=Math.max(0,Math.round((new Date(end)-new Date(start))/60000));
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -316,7 +320,7 @@ function SleepForm({onSave,initial}){
 }
 function WeightForm({onSave,initial}){
   const[w,setW]=useState(initial?.weight||"");
-  const[ts,setTs]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow());
+  const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Inp label="Poids (kg)" type="number" step="0.001" min="0" value={w} onChange={e=>setW(e.target.value)} placeholder="ex: 3.400"/>
     <Inp label="Date/heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
@@ -325,7 +329,7 @@ function WeightForm({onSave,initial}){
 }
 function TempForm({onSave,initial}){
   const[t,setT]=useState(initial?.temp||"");
-  const[ts,setTs]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow());
+  const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Inp label="Température (°C)" type="number" step="0.1" min="35" max="42" value={t} onChange={e=>setT(e.target.value)} placeholder="ex: 37.2"/>
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
@@ -334,7 +338,7 @@ function TempForm({onSave,initial}){
   </div>);
 }
 function SimpleForm({cat,color,onSave,initial}){
-  const[ts,setTs]=useState(initial?new Date(new Date(initial.ts).getTime()+(2*60-new Date().getTimezoneOffset())*60000).toISOString().slice(0,16):localNow());
+  const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   const[note,setNote]=useState(initial?.note||"");
   const[mood,setMood]=useState(initial?.mood||MOODS[0]);
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
