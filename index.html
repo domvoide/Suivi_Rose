@@ -42,7 +42,6 @@ const CATS={
   diaper_poo:{label:"Caca",emoji:"💩",color:C.golden,bg:C.goldenLight},
   diaper_both:{label:"Pipi+Caca",emoji:"💧💩",color:C.golden,bg:C.goldenLight},
   sleep:{label:"Sommeil",emoji:"😴",color:C.lavender,bg:C.lavenderLight},
-  pump:{label:"Tire-lait",emoji:"🍼",color:C.accent,bg:"#FFE8D6"},
   weight:{label:"Poids",emoji:"⚖️",color:C.sage,bg:C.sageLight},
   vitamin:{label:"Vitamines",emoji:"💊",color:C.accent,bg:"#FFE5D9"},
   nombril:{label:"Nombril",emoji:"🌀",color:C.teal,bg:C.tealLight},
@@ -125,7 +124,7 @@ const Inp=({label,...p})=>(<label style={{display:"flex",flexDirection:"column",
 const Sel=({label,children,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><select {...p} style={iSt}>{children}</select></label>);
 
 function FeedForm({onSave,initial}){
-  const[side,setSide]=useState(initial?.side||"Les deux");
+  const[side,setSide]=useState(initial?.side||"Gauche");
   const[dur,setDur]=useState(initial?.duration||"");
   const[qty,setQty]=useState(initial?.quantity||"");
   const[note,setNote]=useState(initial?.note||"");
@@ -161,22 +160,6 @@ function SleepForm({onSave,initial}){
     <Btn color={C.lavender} onClick={()=>onSave({cat:"sleep",duration:dur,ts:localToIso(start)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
-function PumpForm({onSave,initial}){
-  const[side,setSide]=useState(initial?.side||"Gauche");
-  const[qty,setQty]=useState(initial?.quantity||"");
-  const[dur,setDur]=useState(initial?.duration||"");
-  const[note,setNote]=useState(initial?.note||"");
-  const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    <Sel label="Sein" value={side} onChange={e=>setSide(e.target.value)}><option>Gauche</option><option>Droit</option><option>Les deux</option></Sel>
-    <Inp label="Quantité (ml)" type="number" min="0" step="5" value={qty} onChange={e=>setQty(e.target.value)} placeholder="ex: 60"/>
-    <Inp label="Durée (min)" type="number" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
-    <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>
-    <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={C.accent} onClick={()=>onSave({cat:"pump",side,quantity:qty?+qty:null,duration:dur?+dur:null,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
-  </div>);
-}
-
 function WeightForm({onSave,initial}){
   const[w,setW]=useState(initial?.weight||"");
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
@@ -540,7 +523,7 @@ function App(){
   const QUICK=[
     {cat:"feed"},{cat:"diaper_wet"},{cat:"diaper_poo"},{cat:"diaper_both"},
     {cat:"sleep"},{cat:"vitamin"},{cat:"nombril"},{cat:"nez"},
-    {cat:"pump"},{cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"note"},
+    {cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"note"},
   ];
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
@@ -589,7 +572,7 @@ function App(){
     </div>
     {modal&&(
       <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
-        <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,height:"80vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+        <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
             <div style={{fontSize:18,fontWeight:800}}>{isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}</div>
             <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
@@ -599,7 +582,6 @@ function App(){
           {modalType==="sleep"&&<SleepForm onSave={handleSave} initial={modalEntry}/>}
           {modalType==="weight"&&<WeightForm onSave={handleSave} initial={modalEntry}/>}
           {modalType==="temperature"&&<TempForm onSave={handleSave} initial={modalEntry}/>}
-          {modalType==="pump"&&<PumpForm onSave={handleSave} initial={modalEntry}/>}
           {(modalType==="vitamin"||modalType==="bath"||modalType==="mood"||modalType==="note"||modalType==="nombril"||modalType==="nez")&&<SimpleForm cat={modalType} color={CATS[modalType].color} onSave={handleSave} initial={modalEntry}/>}
         </div>
       </div>
