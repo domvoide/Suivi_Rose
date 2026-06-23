@@ -125,7 +125,7 @@ const Inp=({label,...p})=>(<label style={{display:"flex",flexDirection:"column",
 const Sel=({label,children,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><select {...p} style={iSt}>{children}</select></label>);
 
 function FeedForm({onSave,initial}){
-  const[side,setSide]=useState(initial?.side||"Gauche");
+  const[side,setSide]=useState(initial?.side||"Les deux");
   const[dur,setDur]=useState(initial?.duration||"");
   const[qty,setQty]=useState(initial?.quantity||"");
   const[note,setNote]=useState(initial?.note||"");
@@ -589,7 +589,7 @@ function App(){
     </div>
     {modal&&(
       <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
-        <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}>
+        <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,height:"80vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
             <div style={{fontSize:18,fontWeight:800}}>{isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}</div>
             <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
@@ -599,6 +599,7 @@ function App(){
           {modalType==="sleep"&&<SleepForm onSave={handleSave} initial={modalEntry}/>}
           {modalType==="weight"&&<WeightForm onSave={handleSave} initial={modalEntry}/>}
           {modalType==="temperature"&&<TempForm onSave={handleSave} initial={modalEntry}/>}
+          {modalType==="pump"&&<PumpForm onSave={handleSave} initial={modalEntry}/>}
           {(modalType==="vitamin"||modalType==="bath"||modalType==="mood"||modalType==="note"||modalType==="nombril"||modalType==="nez")&&<SimpleForm cat={modalType} color={CATS[modalType].color} onSave={handleSave} initial={modalEntry}/>}
         </div>
       </div>
