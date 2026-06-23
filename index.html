@@ -263,7 +263,25 @@ function TodayStats({entries}){
   const feedMin=feedSessions.reduce((s,e)=>s+(e.duration||0),0);
   const wet=te.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").length;
   const poo=te.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").length;
-  const sleepMin=te.filter(e=>e.cat==="sleep").reduce((s,e)=>s+(e.duration||0),0);
+  // Durée de nuit = entre dernière entrée du soir et première du matin
+  function calcNightDuration(entries){
+    const sorted=[...entries].sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+    // Dernière entrée avant minuit (heure locale)
+    const lastEvening=sorted.filter(e=>{
+      const h=new Date(e.ts).getHours();
+      return h>=20;
+    }).slice(-1)[0];
+    // Première entrée après 4h du matin
+    const firstMorning=sorted.filter(e=>{
+      const h=new Date(e.ts).getHours();
+      return h>=4&&h<12;
+    })[0];
+    if(!lastEvening||!firstMorning)return null;
+    const diff=Math.round((new Date(firstMorning.ts)-new Date(lastEvening.ts))/60000);
+    if(diff<60||diff>720)return null; // ignore si < 1h ou > 12h
+    return diff;
+  }
+  const nightMin=calcNightDuration(entries);
   const lastW=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const lastFeed=entries.filter(e=>e.cat==="feed").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const lastWet=entries.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
@@ -296,7 +314,7 @@ function TodayStats({entries}){
       <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight}/>
       <SC emoji="💧" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight}/>
       <SC emoji="💩" label="Caca" value={poo} sub={lastPoo?timeAgo(lastPoo.ts):null} color={C.golden} bg={C.goldenLight}/>
-      <SC emoji="😴" label="Sommeil" value={sleepMin?durLabel(sleepMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
+      <SC emoji="🌙" label="Nuit" value={nightMin?durLabel(nightMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
       {lastW&&<SC emoji="⚖️" label="Poids" value={`${lastW.weight} kg`} color={C.sage} bg={C.sageLight}/>}
     </div>
   </div>);
@@ -397,6 +415,26 @@ function StatsTab({entries}){
   const weightGain=weights.length>=2?(weights[weights.length-1].weight-weights[0].weight)*1000:null;
   const daysSinceBirth=weights.length>=2?Math.round((new Date(weights[weights.length-1].ts)-new Date(weights[0].ts))/86400000):null;
   const dailyGain=weightGain&&daysSinceBirth?Math.round(weightGain/daysSinceBirth):null;
+  // Durée de nuit par jour sur 7j
+  function calcNightDur(entries){
+    const sorted=[...entries].sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+    const lastEvening=sorted.filter(e=>new Date(e.ts).getHours()>=20).slice(-1)[0];
+    const firstMorning=sorted.filter(e=>{const h=new Date(e.ts).getHours();return h>=4&&h<12;})[0];
+    if(!lastEvening||!firstMorning)return null;
+    const diff=Math.round((new Date(firstMorning.ts)-new Date(lastEvening.ts))/60000);
+    return(diff>=60&&diff<=720)?diff:null;
+  }
+  // Pour chaque nuit on prend les entrées du soir J et du matin J+1
+  const nightDurations=days7.map((d,i)=>{
+    if(i===days7.length-1)return{...d,v:null};
+    const evening=entries.filter(e=>dateZH(e.ts)===d.k);
+    const nextDay=days7[i+1];
+    const morning=entries.filter(e=>dateZH(e.ts)===nextDay.k);
+    return{...d,v:calcNightDur([...evening,...morning])};
+  });
+  const validNights=nightDurations.map(d=>d.v).filter(Boolean);
+  const avgNightDur=validNights.length?Math.round(validNights.reduce((s,x)=>s+x,0)/validNights.length):null;
+
   const nightFeeds=entries.filter(e=>{
     if(e.cat!=="feed")return false;
     const h=+new Date(e.ts).toLocaleTimeString("fr-CH",{hour:"2-digit",timeZone:"Europe/Zurich"}).split(":")[0];
@@ -447,6 +485,24 @@ function StatsTab({entries}){
       <KV label="Tétées nocturnes (22h-6h)" value={avgNightFeeds}/>
       {avgGap&&<KV label="Intervalle moyen entre tétées" value={durLabel(avgGap)}/>}
     </Section>
+    {avgNightDur&&<Section title="🌙 Durée des nuits — 7 jours">
+      <div style={{display:"flex",alignItems:"flex-end",gap:4,height:80,marginBottom:8}}>
+        {nightDurations.map((d,i)=>{
+          const m=Math.max(...nightDurations.map(x=>x.v||0),1);
+          return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+            <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v?durLabel(d.v):""}</div>
+            <div style={{width:"100%",background:C.lavender,opacity:d.v?0.15+0.85*(d.v/m):0.08,borderRadius:"4px 4px 0 0",height:d.v?Math.max(d.v/m*60,4):3,border:d.v?"none":`1px dashed ${C.border}`}}/>
+            <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
+          </div>);
+        })}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
+        <span style={{color:C.muted}}>Moyenne</span>
+        <span style={{fontWeight:700,color:C.lavender}}>{durLabel(avgNightDur)}</span>
+      </div>
+      {avgNightDur>=300&&<div style={{background:C.lavenderLight,borderRadius:10,padding:"8px 12px",fontSize:12,color:C.lavender,fontWeight:600,marginTop:8}}>🌙 Bonne nuit ! +5h en moyenne</div>}
+      {avgNightDur<240&&<div style={{background:C.redLight,borderRadius:10,padding:"8px 12px",fontSize:12,color:C.red,fontWeight:600,marginTop:8}}>⚠️ Nuits courtes — moins de 4h en moyenne</div>}
+    </Section>}
     <Section title="🤱 Allaitements par jour"><BarChart data={feedsByDay} color={C.accent}/></Section>
     <Section title="💧 Pipi par jour"><BarChart data={wetByDay} color={C.sky}/></Section>
     <Section title="💩 Caca par jour"><BarChart data={pooByDay} color={C.golden}/></Section>
@@ -559,7 +615,7 @@ function App(){
   function ageLabel(){
     if(!data.birthDate)return null;
     const days=Math.floor((Date.now()-new Date(data.birthDate))/86400000);
-    if(days<7)return`${days} jour${days>1?"s":""}`;
+    if(days<=30)return`${days} jour${days>1?"s":""}`;
     if(days<56)return`${Math.floor(days/7)} semaine${Math.floor(days/7)>1?"s":""}`;
     return`${Math.floor(days/30)} mois`;
   }
