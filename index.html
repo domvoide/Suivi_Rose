@@ -36,21 +36,24 @@ function isoToLocal(iso){const d=new Date(iso);return`${d.getFullYear()}-${pad(d
 function localToIso(s){return new Date(s).toISOString();}
 
 const C={bg:"#FBF7F4",surface:"#FFFFFF",accent:"#C97A5A",accentLight:"#F0D9CC",sage:"#7A9E87",sageLight:"#D6EAD9",lavender:"#9B8EC4",lavenderLight:"#E5E1F5",sky:"#5A8EC9",skyLight:"#D6E6F5",golden:"#C9A05A",goldenLight:"#F5EBD6",red:"#C95A5A",redLight:"#FFD9D9",text:"#2D2118",muted:"#7A6A5A",border:"#E8DDD4",teal:"#5A9E9B",tealLight:"#D6ECEA"};
+
 const CATS={
-  feed:{label:"Allaitement",emoji:"🤱",color:C.accent,bg:C.accentLight},
-  diaper_wet:{label:"Pipi",emoji:"💧",color:C.sky,bg:C.skyLight},
-  diaper_poo:{label:"Caca",emoji:"💩",color:C.golden,bg:C.goldenLight},
-  diaper_both:{label:"Pipi+Caca",emoji:"💧💩",color:C.golden,bg:C.goldenLight},
-  sleep:{label:"Sommeil",emoji:"😴",color:C.lavender,bg:C.lavenderLight},
-  weight:{label:"Poids",emoji:"⚖️",color:C.sage,bg:C.sageLight},
-  vitamin:{label:"Vitamines",emoji:"💊",color:C.accent,bg:"#FFE5D9"},
-  nombril:{label:"Nombril",emoji:"🌀",color:C.teal,bg:C.tealLight},
-  nez:{label:"Rinçage nez",emoji:"👃",color:C.sky,bg:"#E0F0FF"},
-  bath:{label:"Bain",emoji:"🛁",color:C.sky,bg:"#D9EEFF"},
-  temperature:{label:"Température",emoji:"🌡️",color:C.red,bg:C.redLight},
-  mood:{label:"Humeur",emoji:"😊",color:C.sage,bg:C.sageLight},
-  note:{label:"Note",emoji:"📝",color:C.muted,bg:"#EEEEEE"},
+  feed:        {label:"Allaitement", emoji:"🤱", color:C.accent,   bg:C.accentLight},
+  diaper_wet:  {label:"Pipi",        emoji:"💧", color:C.sky,      bg:C.skyLight},
+  diaper_poo:  {label:"Caca",        emoji:"💩", color:C.golden,   bg:C.goldenLight},
+  diaper_both: {label:"Pipi+Caca",   emoji:"💧💩",color:C.golden,  bg:C.goldenLight},
+  sleep:       {label:"Sommeil",     emoji:"😴", color:C.lavender, bg:C.lavenderLight},
+  pump:        {label:"Tire-lait",   emoji:"🍼", color:C.accent,   bg:"#FFE8D6"},
+  weight:      {label:"Poids",       emoji:"⚖️", color:C.sage,     bg:C.sageLight},
+  vitamin:     {label:"Vitamines",   emoji:"💊", color:C.accent,   bg:"#FFE5D9"},
+  nombril:     {label:"Nombril",     emoji:"🌀", color:C.teal,     bg:C.tealLight},
+  nez:         {label:"Rinçage nez", emoji:"👃", color:C.sky,      bg:"#E0F0FF"},
+  bath:        {label:"Bain",        emoji:"🛁", color:C.sky,      bg:"#D9EEFF"},
+  temperature: {label:"Température", emoji:"🌡️", color:C.red,      bg:C.redLight},
+  mood:        {label:"Humeur",      emoji:"😊", color:C.sage,     bg:C.sageLight},
+  note:        {label:"Note",        emoji:"📝", color:C.muted,    bg:"#EEEEEE"},
 };
+
 const MOODS=["😴","😊","😢","😤","😌","🤔"];
 const POO_COLORS=["Jaune moutarde","Vert","Brun","Orange","Noir"];
 const POO_TEX=["Liquide","Mou","Normal","Granuleux"];
@@ -105,7 +108,6 @@ function checkMorningSoins(entries){
   const te=entries.filter(e=>dateZH(e.ts)===today);
   return{vitDone:te.some(e=>e.cat==="vitamin"&&e.vitaminDone),nombrilDone:te.some(e=>e.cat==="nombril")};
 }
-// Plus longue pause nocturne entre 20h J et 11h J+1
 function calcNightDuration(allEntries){
   const now=new Date();
   const ws=new Date(now);ws.setHours(20,0,0,0);
@@ -136,6 +138,21 @@ function FeedForm({onSave,initial}){
     <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     <Btn color={C.accent} onClick={()=>onSave({cat:"feed",side,duration:dur?+dur:null,quantity:qty?+qty:null,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
+  </div>);
+}
+function PumpForm({onSave,initial}){
+  const[side,setSide]=useState(initial?.side||"Les deux");
+  const[qty,setQty]=useState(initial?.quantity||"");
+  const[dur,setDur]=useState(initial?.duration||"");
+  const[note,setNote]=useState(initial?.note||"");
+  const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
+  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
+    <Sel label="Sein" value={side} onChange={e=>setSide(e.target.value)}><option>Les deux</option><option>Gauche</option><option>Droit</option></Sel>
+    <Inp label="Quantité (ml)" type="number" min="0" step="5" value={qty} onChange={e=>setQty(e.target.value)} placeholder="ex: 60"/>
+    <Inp label="Durée (min)" type="number" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
+    <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>
+    <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
+    <Btn color={C.accent} onClick={()=>onSave({cat:"pump",side,quantity:qty?+qty:null,duration:dur?+dur:null,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 function DiaperForm({type,onSave,initial}){
@@ -337,9 +354,12 @@ function StatsTab({entries}){
   const avgFeeds=avg(feedsByDay.map(d=>d.v));
   const avgWet=avg(wetByDay.map(d=>d.v));
   const avgPoo=avg(pooByDay.map(d=>d.v));
-  const allFeeds=entries.filter(e=>e.cat==="feed").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  const feedGaps=allFeeds.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFeeds[i].ts))/60000).filter(g=>g>20&&g<360);
+
+  // Intervalle entre sessions complètes
+  const allFeedSessions=groupFeeds(entries.filter(e=>e.cat==="feed")).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const feedGaps=allFeedSessions.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFeedSessions[i].ts))/60000).filter(g=>g>30&&g<480);
   const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
+
   const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
   const weightGain=weights.length>=2?(weights[weights.length-1].weight-weights[0].weight)*1000:null;
   const daysSinceBirth=weights.length>=2?Math.round((new Date(weights[weights.length-1].ts)-new Date(weights[0].ts))/86400000):null;
@@ -354,21 +374,14 @@ function StatsTab({entries}){
   const trend=(cat,prev,curr)=>{const p=prev.filter(e=>e.cat===cat).length,c=curr.filter(e=>e.cat===cat).length;if(c>p)return{arrow:"↑",color:C.sage};if(c<p)return{arrow:"↓",color:C.red};return{arrow:"→",color:C.muted};};
   const tFeed=trend("feed",e48a,e48b),tWet=trend("diaper_wet",e48a,e48b),tPoo=trend("diaper_poo",e48a,e48b);
 
-  // Nuits 7j — plus longue pause entre 20h J et 11h J+1
   function calcNightDur(dayK,nextDayK){
-    const inW=entries.filter(e=>{
-      const h=new Date(e.ts).getHours();
-      return(dateZH(e.ts)===dayK&&h>=20)||(dateZH(e.ts)===nextDayK&&h<11);
-    }).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+    const inW=entries.filter(e=>{const h=new Date(e.ts).getHours();return(dateZH(e.ts)===dayK&&h>=20)||(dateZH(e.ts)===nextDayK&&h<11);}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
     if(inW.length<2)return null;
     let max=0;
     for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(g>max)max=g;}
     return max>=60?Math.round(max):null;
   }
-  const nightDurations=days7.map((d,i)=>{
-    if(i===days7.length-1)return{...d,v:null};
-    return{...d,v:calcNightDur(d.k,days7[i+1].k)};
-  });
+  const nightDurations=days7.map((d,i)=>{if(i===days7.length-1)return{...d,v:null};return{...d,v:calcNightDur(d.k,days7[i+1].k)};});
   const validNights=nightDurations.map(d=>d.v).filter(Boolean);
   const avgNightDur=validNights.length?Math.round(validNights.reduce((s,x)=>s+x,0)/validNights.length):null;
 
@@ -523,7 +536,7 @@ function App(){
   const QUICK=[
     {cat:"feed"},{cat:"diaper_wet"},{cat:"diaper_poo"},{cat:"diaper_both"},
     {cat:"sleep"},{cat:"vitamin"},{cat:"nombril"},{cat:"nez"},
-    {cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"note"},
+    {cat:"pump"},{cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"note"},
   ];
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
@@ -572,12 +585,13 @@ function App(){
     </div>
     {modal&&(
       <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
-        <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}>
+        <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,height:"80vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
             <div style={{fontSize:18,fontWeight:800}}>{isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}</div>
             <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
           </div>
           {modalType==="feed"&&<FeedForm onSave={handleSave} initial={modalEntry}/>}
+          {modalType==="pump"&&<PumpForm onSave={handleSave} initial={modalEntry}/>}
           {(modalType==="diaper_wet"||modalType==="diaper_poo"||modalType==="diaper_both")&&<DiaperForm type={modalType} onSave={handleSave} initial={modalEntry}/>}
           {modalType==="sleep"&&<SleepForm onSave={handleSave} initial={modalEntry}/>}
           {modalType==="weight"&&<WeightForm onSave={handleSave} initial={modalEntry}/>}
