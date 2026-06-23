@@ -29,58 +29,33 @@ const FB_KEY = "AIzaSyB1E5I3oN9MHcs0kaT3xv-4iaR_Hv86lhw";
 async function fbRead(){try{const r=await fetch(`${FB_PATH}?auth=${FB_KEY}`);if(!r.ok)return null;return await r.json();}catch{return null;}}
 async function fbWrite(d){try{await fetch(`${FB_PATH}?auth=${FB_KEY}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});}catch{}}
 
-// ─── Heure locale : TOUJOURS utiliser les méthodes locales du navigateur ─────
 function pad(n){return String(n).padStart(2,"0");}
+function localNow(){const d=new Date();return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+function localHoursBefore(h){const d=new Date(Date.now()-h*3600000);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+function isoToLocal(iso){const d=new Date(iso);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+function localToIso(s){return new Date(s).toISOString();}
 
-// Heure locale actuelle pour datetime-local input
-function localNow(){
-  const d=new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-// Heure locale il y a N heures
-function localHoursBefore(h){
-  const d=new Date(Date.now()-h*3600000);
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-// UTC ISO → heure locale pour les inputs (PAS de calcul d'offset manuel)
-function isoToLocal(iso){
-  const d=new Date(iso);
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-// datetime-local string → UTC ISO (le navigateur fait la conversion)
-function localToIso(localStr){
-  return new Date(localStr).toISOString();
-}
-
-const C={
-  bg:"#FBF7F4",surface:"#FFFFFF",accent:"#C97A5A",accentLight:"#F0D9CC",
-  sage:"#7A9E87",sageLight:"#D6EAD9",lavender:"#9B8EC4",lavenderLight:"#E5E1F5",
-  sky:"#5A8EC9",skyLight:"#D6E6F5",golden:"#C9A05A",goldenLight:"#F5EBD6",
-  red:"#C95A5A",redLight:"#FFD9D9",text:"#2D2118",muted:"#7A6A5A",border:"#E8DDD4",
-  teal:"#5A9E9B",tealLight:"#D6ECEA",
-};
+const C={bg:"#FBF7F4",surface:"#FFFFFF",accent:"#C97A5A",accentLight:"#F0D9CC",sage:"#7A9E87",sageLight:"#D6EAD9",lavender:"#9B8EC4",lavenderLight:"#E5E1F5",sky:"#5A8EC9",skyLight:"#D6E6F5",golden:"#C9A05A",goldenLight:"#F5EBD6",red:"#C95A5A",redLight:"#FFD9D9",text:"#2D2118",muted:"#7A6A5A",border:"#E8DDD4",teal:"#5A9E9B",tealLight:"#D6ECEA"};
 const CATS={
-  feed:        {label:"Allaitement", emoji:"🤱",color:C.accent,  bg:C.accentLight},
-  diaper_wet:  {label:"Pipi",        emoji:"💧",color:C.sky,     bg:C.skyLight},
-  diaper_poo:  {label:"Caca",        emoji:"💩",color:C.golden,  bg:C.goldenLight},
-  diaper_both: {label:"Pipi+Caca",   emoji:"💧💩",color:C.golden,bg:C.goldenLight},
-  sleep:       {label:"Sommeil",     emoji:"😴",color:C.lavender,bg:C.lavenderLight},
-  weight:      {label:"Poids",       emoji:"⚖️",color:C.sage,    bg:C.sageLight},
-  vitamin:     {label:"Vitamines",   emoji:"💊",color:C.accent,  bg:"#FFE5D9"},
-  nombril:     {label:"Nombril",     emoji:"🌀",color:C.teal,    bg:C.tealLight},
-  nez:         {label:"Rinçage nez", emoji:"👃",color:C.sky,     bg:"#E0F0FF"},
-  bath:        {label:"Bain",        emoji:"🛁",color:C.sky,     bg:"#D9EEFF"},
-  temperature: {label:"Température", emoji:"🌡️",color:C.red,     bg:C.redLight},
-  mood:        {label:"Humeur",      emoji:"😊",color:C.sage,    bg:C.sageLight},
-  note:        {label:"Note",        emoji:"📝",color:C.muted,   bg:"#EEEEEE"},
+  feed:{label:"Allaitement",emoji:"🤱",color:C.accent,bg:C.accentLight},
+  diaper_wet:{label:"Pipi",emoji:"💧",color:C.sky,bg:C.skyLight},
+  diaper_poo:{label:"Caca",emoji:"💩",color:C.golden,bg:C.goldenLight},
+  diaper_both:{label:"Pipi+Caca",emoji:"💧💩",color:C.golden,bg:C.goldenLight},
+  sleep:{label:"Sommeil",emoji:"😴",color:C.lavender,bg:C.lavenderLight},
+  weight:{label:"Poids",emoji:"⚖️",color:C.sage,bg:C.sageLight},
+  vitamin:{label:"Vitamines",emoji:"💊",color:C.accent,bg:"#FFE5D9"},
+  nombril:{label:"Nombril",emoji:"🌀",color:C.teal,bg:C.tealLight},
+  nez:{label:"Rinçage nez",emoji:"👃",color:C.sky,bg:"#E0F0FF"},
+  bath:{label:"Bain",emoji:"🛁",color:C.sky,bg:"#D9EEFF"},
+  temperature:{label:"Température",emoji:"🌡️",color:C.red,bg:C.redLight},
+  mood:{label:"Humeur",emoji:"😊",color:C.sage,bg:C.sageLight},
+  note:{label:"Note",emoji:"📝",color:C.muted,bg:"#EEEEEE"},
 };
 const MOODS=["😴","😊","😢","😤","😌","🤔"];
 const POO_COLORS=["Jaune moutarde","Vert","Brun","Orange","Noir"];
 const POO_TEX=["Liquide","Mou","Normal","Granuleux"];
-
 const DEFAULT={babyName:"Rose",birthDate:"2026-06-15",entries:[]};
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
 function fmtTime(iso){return new Date(iso).toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});}
 function fmtDate(iso){
   const d=new Date(iso),now=new Date();
@@ -92,7 +67,9 @@ function fmtDate(iso){
 }
 function fmtShortDate(iso){
   const d=new Date(iso);
-  return `${pad(d.toLocaleDateString("fr-CH",{day:"numeric",timeZone:"Europe/Zurich"}).replace(/\D/g,""))}.${pad(d.toLocaleDateString("fr-CH",{month:"numeric",timeZone:"Europe/Zurich"}).replace(/\D/g,""))}`;
+  const day=pad(+d.toLocaleDateString("fr-CH",{day:"numeric",timeZone:"Europe/Zurich"}));
+  const mon=pad(+d.toLocaleDateString("fr-CH",{month:"numeric",timeZone:"Europe/Zurich"}));
+  return`${day}.${mon}`;
 }
 function durLabel(m){if(!m)return"";return m<60?`${m} min`:`${Math.floor(m/60)}h${pad(m%60)}`;}
 function timeAgo(iso){
@@ -105,9 +82,7 @@ function dateZH(iso){return new Date(iso).toLocaleDateString("fr-CH",{timeZone:"
 function todayZH(){return new Date().toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});}
 function groupByDay(entries){
   const g={};
-  [...entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).forEach(e=>{
-    const k=dateZH(e.ts);if(!g[k])g[k]=[];g[k].push(e);
-  });
+  [...entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).forEach(e=>{const k=dateZH(e.ts);if(!g[k])g[k]=[];g[k].push(e);});
   return g;
 }
 function groupFeeds(list){
@@ -119,9 +94,7 @@ function groupFeeds(list){
       const nxt=feeds[i+1];
       const diff=(new Date(nxt.ts)-new Date(cur.ts))/60000;
       const sides=new Set([cur.side,nxt.side]);
-      if(diff<=30&&sides.has("Gauche")&&sides.has("Droit")){
-        sessions.push({...cur,side:"Les deux",_merged:true});i+=2;continue;
-      }
+      if(diff<=30&&sides.has("Gauche")&&sides.has("Droit")){sessions.push({...cur,side:"Les deux",_merged:true});i+=2;continue;}
     }
     sessions.push(cur);i++;
   }
@@ -132,16 +105,24 @@ function checkMorningSoins(entries){
   const te=entries.filter(e=>dateZH(e.ts)===today);
   return{vitDone:te.some(e=>e.cat==="vitamin"&&e.vitaminDone),nombrilDone:te.some(e=>e.cat==="nombril")};
 }
+// Plus longue pause nocturne entre 20h J et 11h J+1
+function calcNightDuration(allEntries){
+  const now=new Date();
+  const ws=new Date(now);ws.setHours(20,0,0,0);
+  if(ws>now)ws.setDate(ws.getDate()-1);
+  const we=new Date(ws);we.setDate(we.getDate()+1);we.setHours(11,0,0,0);
+  const inW=allEntries.filter(e=>{const t=new Date(e.ts);return t>=ws&&t<=we;}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  if(inW.length<2)return null;
+  let max=0;
+  for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(g>max)max=g;}
+  return max>=60?Math.round(max):null;
+}
 
-// ─── UI atoms ─────────────────────────────────────────────────────────────────
-const Btn=({color,children,onClick,style={}})=>(
-  <button onClick={onClick} style={{background:color,color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontWeight:700,fontSize:15,cursor:"pointer",...style}}>{children}</button>
-);
+const Btn=({color,children,onClick,style={}})=>(<button onClick={onClick} style={{background:color,color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontWeight:700,fontSize:15,cursor:"pointer",...style}}>{children}</button>);
 const iSt={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 12px",fontSize:15,background:C.bg,color:C.text,outline:"none",width:"100%",boxSizing:"border-box"};
 const Inp=({label,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><input {...p} style={iSt}/></label>);
 const Sel=({label,children,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><select {...p} style={iSt}>{children}</select></label>);
 
-// ─── Formulaires — heure toujours via isoToLocal / localNow ──────────────────
 function FeedForm({onSave,initial}){
   const[side,setSide]=useState(initial?.side||"Gauche");
   const[dur,setDur]=useState(initial?.duration||"");
@@ -210,7 +191,6 @@ function SimpleForm({cat,color,onSave,initial}){
   </div>);
 }
 
-// ─── EntryCard ────────────────────────────────────────────────────────────────
 function EntryCard({entry,onDelete,onEdit}){
   const cat=CATS[entry.cat]||CATS.note;
   const[confirm,setConfirm]=useState(false);
@@ -247,7 +227,6 @@ function EntryCard({entry,onDelete,onEdit}){
   </div>);
 }
 
-// ─── TodayStats — se rafraîchit toutes les 5 minutes ─────────────────────────
 function TodayStats({entries}){
   const[,setTick]=useState(0);
   useEffect(()=>{
@@ -255,60 +234,33 @@ function TodayStats({entries}){
     document.addEventListener("visibilitychange",onVisible);
     return()=>document.removeEventListener("visibilitychange",onVisible);
   },[]);
-
   const now=new Date();
   const since=new Date(now.getTime()-24*3600000);
   const te=entries.filter(e=>new Date(e.ts)>=since);
   const feedSessions=groupFeeds(te);
-  const feedMin=feedSessions.reduce((s,e)=>s+(e.duration||0),0);
   const wet=te.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").length;
   const poo=te.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").length;
-  // Durée de nuit = entre dernière entrée du soir et première du matin
-  function calcNightDuration(entries){
-    const sorted=[...entries].sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-    // Dernière entrée avant minuit (heure locale)
-    const lastEvening=sorted.filter(e=>{
-      const h=new Date(e.ts).getHours();
-      return h>=20;
-    }).slice(-1)[0];
-    // Première entrée après 4h du matin
-    const firstMorning=sorted.filter(e=>{
-      const h=new Date(e.ts).getHours();
-      return h>=4&&h<12;
-    })[0];
-    if(!lastEvening||!firstMorning)return null;
-    const diff=Math.round((new Date(firstMorning.ts)-new Date(lastEvening.ts))/60000);
-    if(diff<60||diff>720)return null; // ignore si < 1h ou > 12h
-    return diff;
-  }
-  const nightMin=calcNightDuration(entries);
-  const lastW=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const lastFeed=entries.filter(e=>e.cat==="feed").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const lastWet=entries.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const lastPoo=entries.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+  const lastW=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+  const nightMin=calcNightDuration(entries);
   const{vitDone,nombrilDone}=checkMorningSoins(entries);
   const heure=now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});
-
-  const SC=({emoji,label,value,sub,color,bg})=>(
-    <div style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`}}>
-      <div style={{fontSize:18}}>{emoji}</div>
-      <div style={{fontSize:20,fontWeight:700,color:color||C.text}}>{value}</div>
-      <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{label}</div>
-      {sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}
-    </div>
-  );
+  const SC=({emoji,label,value,sub,color,bg})=>(<div style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`}}>
+    <div style={{fontSize:18}}>{emoji}</div>
+    <div style={{fontSize:20,fontWeight:700,color:color||C.text}}>{value}</div>
+    <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{label}</div>
+    {sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}
+  </div>);
   return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
     <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>Dernières 24h</div>
       <div style={{fontSize:13,fontWeight:600,color:C.accent}}>🕐 {heure}</div>
     </div>
     <div style={{display:"flex",gap:8}}>
-      <div style={{flex:1,background:vitDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:vitDone?C.sage:C.red,textAlign:"center"}}>
-        💊 Vitamines {vitDone?"✓":"⚠️ à faire"}
-      </div>
-      <div style={{flex:1,background:nombrilDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:nombrilDone?C.sage:C.red,textAlign:"center"}}>
-        🌀 Nombril {nombrilDone?"✓":"⚠️ à faire"}
-      </div>
+      <div style={{flex:1,background:vitDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:vitDone?C.sage:C.red,textAlign:"center"}}>💊 Vitamines {vitDone?"✓":"⚠️ à faire"}</div>
+      <div style={{flex:1,background:nombrilDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:nombrilDone?C.sage:C.red,textAlign:"center"}}>🌀 Nombril {nombrilDone?"✓":"⚠️ à faire"}</div>
     </div>
     <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
       <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight}/>
@@ -320,7 +272,6 @@ function TodayStats({entries}){
   </div>);
 }
 
-// ─── Journal ──────────────────────────────────────────────────────────────────
 function Journal({entries,onDelete,onEdit}){
   const groups=groupByDay(entries);
   if(!entries.length)return<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.<br/><span style={{fontSize:32}}>👶</span></div>;
@@ -332,55 +283,34 @@ function Journal({entries,onDelete,onEdit}){
   </div>);
 }
 
-// ─── Courbe de poids — axe X proportionnel aux dates ─────────────────────────
 function WeightChart({entries}){
   const ws=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
   if(ws.length<2)return<div style={{color:C.muted,textAlign:"center",padding:"40px 0"}}>Ajoutez au moins 2 pesées.</div>;
-
   const PX=48,PY=24,PB=28,H=220;
-  const t0=new Date(ws[0].ts).getTime();
-  const t1=new Date(ws[ws.length-1].ts).getTime();
-  const totalMs=t1-t0||1;
-  const minPtsW=Math.max(300,ws.length*50);
-  const W=Math.max(minPtsW,window.innerWidth-32);
-  const innerW=W-PX*2;
-  const innerH=H-PY-PB;
-
-  const minW=Math.min(...ws.map(e=>e.weight))-0.05;
-  const maxW=Math.max(...ws.map(e=>e.weight))+0.05;
-
-  // X proportionnel au temps
+  const t0=new Date(ws[0].ts).getTime(),t1=new Date(ws[ws.length-1].ts).getTime(),totalMs=t1-t0||1;
+  const W=Math.max(300,Math.max(ws.length*60,(typeof window!=="undefined"?window.innerWidth:400)-32));
+  const innerW=W-PX*2,innerH=H-PY-PB;
+  const minW=Math.min(...ws.map(e=>e.weight))-0.05,maxW=Math.max(...ws.map(e=>e.weight))+0.05;
   const toX=ts=>PX+((new Date(ts).getTime()-t0)/totalMs)*innerW;
   const toY=w=>PY+(1-(w-minW)/(maxW-minW))*innerH;
-
   const pts=ws.map(e=>({x:toX(e.ts),y:toY(e.weight),w:e.weight,ts:e.ts}));
   const path=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
   const area=`${path} L${pts[pts.length-1].x},${PY+innerH} L${pts[0].x},${PY+innerH} Z`;
-  const yTicks=4;
-  const yVals=Array.from({length:yTicks+1},(_,i)=>minW+(maxW-minW)*i/yTicks);
-
+  const yVals=Array.from({length:5},(_,i)=>minW+(maxW-minW)*i/4);
   return(<div>
     <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Courbe de poids</div>
     <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",margin:"0 -16px",padding:"0 16px"}}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{width:W,minWidth:W,height:H,display:"block"}}>
         <rect width={W} height={H} fill={C.bg} rx={14}/>
-        {yVals.map((v,i)=>(<g key={i}>
-          <line x1={PX} y1={toY(v)} x2={W-PX} y2={toY(v)} stroke={C.border} strokeDasharray="4 3" strokeWidth={0.8}/>
-          <text x={PX-6} y={toY(v)+4} fontSize={9} fill={C.muted} textAnchor="end">{v.toFixed(3)}</text>
-        </g>))}
+        {yVals.map((v,i)=>(<g key={i}><line x1={PX} y1={toY(v)} x2={W-PX} y2={toY(v)} stroke={C.border} strokeDasharray="4 3" strokeWidth={0.8}/><text x={PX-6} y={toY(v)+4} fontSize={9} fill={C.muted} textAnchor="end">{v.toFixed(3)}</text></g>))}
         <path d={area} fill={C.sage} fillOpacity={0.08}/>
         <path d={path} fill="none" stroke={C.sage} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>
-        {pts.map((p,i)=>(<g key={i}>
-          <circle cx={p.x} cy={p.y} r={5} fill={C.sage} stroke="#fff" strokeWidth={1.5}/>
-          <text x={p.x} y={p.y-11} fontSize={10} fill={C.sage} textAnchor="middle" fontWeight={700}>{p.w.toFixed(3)}</text>
-          <text x={p.x} y={H-8} fontSize={9} fill={C.muted} textAnchor="middle">{fmtShortDate(p.ts)}</text>
-        </g>))}
+        {pts.map((p,i)=>(<g key={i}><circle cx={p.x} cy={p.y} r={5} fill={C.sage} stroke="#fff" strokeWidth={1.5}/><text x={p.x} y={p.y-11} fontSize={10} fill={C.sage} textAnchor="middle" fontWeight={700}>{p.w.toFixed(3)}</text><text x={p.x} y={H-8} fontSize={9} fill={C.muted} textAnchor="middle">{fmtShortDate(p.ts)}</text></g>))}
       </svg>
     </div>
   </div>);
 }
 
-// ─── Stats ────────────────────────────────────────────────────────────────────
 function StatsTab({entries}){
   const[,setTick]=useState(0);
   useEffect(()=>{
@@ -388,7 +318,6 @@ function StatsTab({entries}){
     document.addEventListener("visibilitychange",onVisible);
     return()=>document.removeEventListener("visibilitychange",onVisible);
   },[]);
-
   const now=new Date();
   function byDay(n){
     const days=[];
@@ -396,7 +325,7 @@ function StatsTab({entries}){
       const d=new Date(now.getTime()-i*86400000);
       const k=d.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});
       const label=i===0?"Auj.":i===1?"Hier":`${pad(d.getDate())}.${pad(d.getMonth()+1)}`;
-      days.push({k,label});
+      days.push({k,label,d});
     }
     return days;
   }
@@ -415,43 +344,33 @@ function StatsTab({entries}){
   const weightGain=weights.length>=2?(weights[weights.length-1].weight-weights[0].weight)*1000:null;
   const daysSinceBirth=weights.length>=2?Math.round((new Date(weights[weights.length-1].ts)-new Date(weights[0].ts))/86400000):null;
   const dailyGain=weightGain&&daysSinceBirth?Math.round(weightGain/daysSinceBirth):null;
-  // Durée de nuit par jour sur 7j
-  function calcNightDur(entries){
-    const sorted=[...entries].sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-    const lastEvening=sorted.filter(e=>new Date(e.ts).getHours()>=20).slice(-1)[0];
-    const firstMorning=sorted.filter(e=>{const h=new Date(e.ts).getHours();return h>=4&&h<12;})[0];
-    if(!lastEvening||!firstMorning)return null;
-    const diff=Math.round((new Date(firstMorning.ts)-new Date(lastEvening.ts))/60000);
-    return(diff>=60&&diff<=720)?diff:null;
-  }
-  // Pour chaque nuit on prend les entrées du soir J et du matin J+1
-  const nightDurations=days7.map((d,i)=>{
-    if(i===days7.length-1)return{...d,v:null};
-    const evening=entries.filter(e=>dateZH(e.ts)===d.k);
-    const nextDay=days7[i+1];
-    const morning=entries.filter(e=>dateZH(e.ts)===nextDay.k);
-    return{...d,v:calcNightDur([...evening,...morning])};
-  });
-  const validNights=nightDurations.map(d=>d.v).filter(Boolean);
-  const avgNightDur=validNights.length?Math.round(validNights.reduce((s,x)=>s+x,0)/validNights.length):null;
-
-  const nightFeeds=entries.filter(e=>{
-    if(e.cat!=="feed")return false;
-    const h=+new Date(e.ts).toLocaleTimeString("fr-CH",{hour:"2-digit",timeZone:"Europe/Zurich"}).split(":")[0];
-    return h>=22||h<6;
-  });
+  const nightFeeds=entries.filter(e=>{if(e.cat!=="feed")return false;const h=new Date(e.ts).getHours();return h>=22||h<6;});
   const nightByDay=days7.map(d=>({...d,v:nightFeeds.filter(e=>dateZH(e.ts)===d.k).length}));
   const avgNightFeeds=avg(nightByDay.map(d=>d.v));
   const vitDays=days7.filter(d=>entries.some(e=>e.cat==="vitamin"&&e.vitaminDone&&dateZH(e.ts)===d.k)).length;
   const nombrilDays=days7.filter(d=>entries.some(e=>e.cat==="nombril"&&dateZH(e.ts)===d.k)).length;
   const e48a=entries.filter(e=>new Date(e.ts)>=new Date(now-48*3600000)&&new Date(e.ts)<new Date(now-24*3600000));
   const e48b=entries.filter(e=>new Date(e.ts)>=new Date(now-24*3600000));
-  const trend=(cat,prev,curr)=>{
-    const p=prev.filter(e=>e.cat===cat).length,c=curr.filter(e=>e.cat===cat).length;
-    if(c>p)return{arrow:"↑",color:C.sage};if(c<p)return{arrow:"↓",color:C.red};
-    return{arrow:"→",color:C.muted};
-  };
+  const trend=(cat,prev,curr)=>{const p=prev.filter(e=>e.cat===cat).length,c=curr.filter(e=>e.cat===cat).length;if(c>p)return{arrow:"↑",color:C.sage};if(c<p)return{arrow:"↓",color:C.red};return{arrow:"→",color:C.muted};};
   const tFeed=trend("feed",e48a,e48b),tWet=trend("diaper_wet",e48a,e48b),tPoo=trend("diaper_poo",e48a,e48b);
+
+  // Nuits 7j — plus longue pause entre 20h J et 11h J+1
+  function calcNightDur(dayK,nextDayK){
+    const inW=entries.filter(e=>{
+      const h=new Date(e.ts).getHours();
+      return(dateZH(e.ts)===dayK&&h>=20)||(dateZH(e.ts)===nextDayK&&h<11);
+    }).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+    if(inW.length<2)return null;
+    let max=0;
+    for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(g>max)max=g;}
+    return max>=60?Math.round(max):null;
+  }
+  const nightDurations=days7.map((d,i)=>{
+    if(i===days7.length-1)return{...d,v:null};
+    return{...d,v:calcNightDur(d.k,days7[i+1].k)};
+  });
+  const validNights=nightDurations.map(d=>d.v).filter(Boolean);
+  const avgNightDur=validNights.length?Math.round(validNights.reduce((s,x)=>s+x,0)/validNights.length):null;
 
   function BarChart({data,color}){
     const m=Math.max(...data.map(d=>d.v),1);
@@ -491,7 +410,7 @@ function StatsTab({entries}){
           const m=Math.max(...nightDurations.map(x=>x.v||0),1);
           return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
             <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v?durLabel(d.v):""}</div>
-            <div style={{width:"100%",background:C.lavender,opacity:d.v?0.15+0.85*(d.v/m):0.08,borderRadius:"4px 4px 0 0",height:d.v?Math.max(d.v/m*60,4):3,border:d.v?"none":`1px dashed ${C.border}`}}/>
+            <div style={{width:"100%",background:C.lavender,opacity:d.v?0.15+0.85*(d.v/m):0.08,borderRadius:"4px 4px 0 0",height:d.v?Math.max(d.v/m*60,4):3}}/>
             <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
           </div>);
         })}
@@ -527,7 +446,6 @@ function StatsTab({entries}){
   </div>);
 }
 
-// ─── Settings ─────────────────────────────────────────────────────────────────
 function Settings({data,onUpdate,syncStatus}){
   const[name,setName]=useState(data.babyName);
   const[birth,setBirth]=useState(data.birthDate);
@@ -545,7 +463,6 @@ function Settings({data,onUpdate,syncStatus}){
   </div>);
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
 function App(){
   const[data,setData]=useState(DEFAULT);
   const[tab,setTab]=useState("home");
@@ -560,7 +477,6 @@ function App(){
     }).catch(()=>setSyncStatus("offline"));
   },[]);
 
-  // Sync Firebase : au retour sur l'app (visibilitychange) + toutes les 2 min si active
   useEffect(()=>{
     function syncNow(){
       fbRead().then(remote=>{
@@ -574,10 +490,8 @@ function App(){
         setSyncStatus("ok");
       }).catch(()=>setSyncStatus("offline"));
     }
-    // Sync au retour sur l'app (écran rallumé, onglet réactivé)
     function onVisible(){if(document.visibilityState==="visible")syncNow();}
     document.addEventListener("visibilitychange",onVisible);
-    // Sync de fond toutes les 2 min seulement si l'app est visible
     const id=setInterval(()=>{if(document.visibilityState==="visible")syncNow();},2*60*1000);
     return()=>{document.removeEventListener("visibilitychange",onVisible);clearInterval(id);};
   },[]);
@@ -585,29 +499,15 @@ function App(){
   function persist(next){
     setData(next);setSyncStatus("syncing");
     clearTimeout(saveTimer.current);
-    saveTimer.current=setTimeout(()=>{
-      fbWrite(next).then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("error"));
-    },800);
+    saveTimer.current=setTimeout(()=>{fbWrite(next).then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("error"));},800);
   }
-
   const author=()=>{try{return localStorage.getItem("bt_author")||"";}catch{return"";}};
-
-  function addEntry(payload){
-    const entry={id:Date.now()+Math.random(),...payload,author:author()||undefined};
-    persist({...data,entries:[entry,...data.entries]});
-    setModal(null);
-  }
-  function editEntry(payload){
-    const updated=data.entries.map(e=>e.id===modal.entry.id?{...e,...payload}:e);
-    persist({...data,entries:updated});
-    setModal(null);
-  }
+  function addEntry(payload){const entry={id:Date.now()+Math.random(),...payload,author:author()||undefined};persist({...data,entries:[entry,...data.entries]});setModal(null);}
+  function editEntry(payload){const updated=data.entries.map(e=>e.id===modal.entry.id?{...e,...payload}:e);persist({...data,entries:updated});setModal(null);}
   function deleteEntry(id){persist({...data,entries:data.entries.filter(e=>e.id!==id)});}
   function updateMeta(patch){persist({...data,...patch});}
-
   const isEditing=modal&&modal.entry;
-  const modalType=modal?.type;
-  const modalEntry=modal?.entry;
+  const modalType=modal?.type,modalEntry=modal?.entry;
   function handleSave(payload){isEditing?editEntry(payload):addEntry(payload);}
   function openModal(cat){setModal({type:cat});}
   function openEdit(entry){setModal({type:entry.cat,entry});}
@@ -638,7 +538,6 @@ function App(){
         <span style={{fontSize:18}}>{syncDot}</span>
       </div>
     </div>
-
     <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px 100px"}}>
       {tab==="home"&&(<div style={{display:"flex",flexDirection:"column",gap:24}}>
         <TodayStats entries={data.entries}/>
@@ -664,7 +563,6 @@ function App(){
       {tab==="weight"&&<WeightChart entries={data.entries}/>}
       {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
     </div>
-
     <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0 20px",zIndex:50}}>
       {[["home","🏠","Accueil"],["journal","📋","Journal"],["stats","📊","Stats"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].map(([t,emoji,label])=>(
         <button key={t} onClick={()=>setTab(t)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===t?C.accent:C.muted,fontWeight:tab===t?700:400,fontSize:11}}>
@@ -672,15 +570,11 @@ function App(){
         </button>
       ))}
     </div>
-
     {modal&&(
-      <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}}
-        onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
+      <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
         <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-            <div style={{fontSize:18,fontWeight:800}}>
-              {isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}
-            </div>
+            <div style={{fontSize:18,fontWeight:800}}>{isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}</div>
             <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
           </div>
           {modalType==="feed"&&<FeedForm onSave={handleSave} initial={modalEntry}/>}
