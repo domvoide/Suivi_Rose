@@ -109,15 +109,24 @@ function checkMorningSoins(entries){
   return{vitDone:te.some(e=>e.cat==="vitamin"&&e.vitaminDone),nombrilDone:te.some(e=>e.cat==="nombril")};
 }
 function calcNightDuration(allEntries){
+  // Cherche la plus longue pause dans une fenêtre 20h→11h
+  function longestPause(ws, we){
+    const inW=allEntries.filter(e=>{const t=new Date(e.ts);return t>=ws&&t<=we;}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+    if(inW.length<2)return null;
+    let max=0;
+    for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(g>max)max=g;}
+    return max>=60?Math.round(max):null;
+  }
   const now=new Date();
-  const ws=new Date(now);ws.setHours(20,0,0,0);
-  if(ws>now)ws.setDate(ws.getDate()-1);
-  const we=new Date(ws);we.setDate(we.getDate()+1);we.setHours(11,0,0,0);
-  const inW=allEntries.filter(e=>{const t=new Date(e.ts);return t>=ws&&t<=we;}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  if(inW.length<2)return null;
-  let max=0;
-  for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(g>max)max=g;}
-  return max>=60?Math.round(max):null;
+  // Nuit actuelle : hier 20h → aujourd'hui 11h
+  const ws0=new Date(now);ws0.setHours(20,0,0,0);if(ws0>now)ws0.setDate(ws0.getDate()-1);
+  const we0=new Date(ws0);we0.setDate(we0.getDate()+1);we0.setHours(11,0,0,0);
+  const current=longestPause(ws0,we0);
+  if(current)return current;
+  // Nuit précédente : avant-hier 20h → hier 11h
+  const ws1=new Date(ws0);ws1.setDate(ws1.getDate()-1);
+  const we1=new Date(we0);we1.setDate(we1.getDate()-1);
+  return longestPause(ws1,we1);
 }
 
 const Btn=({color,children,onClick,style={}})=>(<button onClick={onClick} style={{background:color,color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontWeight:700,fontSize:15,cursor:"pointer",...style}}>{children}</button>);
@@ -244,8 +253,53 @@ function EntryCard({entry,onDelete,onEdit}){
   </div>);
 }
 
+// ─── Mini journal par catégorie ───────────────────────────────────────────────
+function MiniJournal({entries, cats, title, onClose}){
+  const filtered=[...entries].filter(e=>cats.includes(e.cat)).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const groups=groupByDay(filtered);
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 16px 40px",width:"100%",maxWidth:480,height:"75vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+          <div style={{fontSize:17,fontWeight:800,color:C.text}}>{title}</div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
+        </div>
+        {!filtered.length&&<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.</div>}
+        <div style={{display:"flex",flexDirection:"column",gap:18}}>
+          {Object.entries(groups).map(([day,es])=>(
+            <div key={day}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:6}}>{fmtDate(es[0].ts)}</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {es.map(e=>{
+                  const cat=CATS[e.cat]||CATS.note;
+                  const parts=[];
+                  if(e.side)parts.push(e.side==="Les deux"?"Les deux seins":`Sein ${e.side}`);
+                  if(e.duration)parts.push(durLabel(e.duration));
+                  if(e.quantity)parts.push(`${e.quantity} ml`);
+                  if(e.weight)parts.push(`${e.weight} kg`);
+                  if(e.pooColor)parts.push(e.pooColor);
+                  if(e.pooTex)parts.push(e.pooTex);
+                  if(e.note)parts.push(e.note);
+                  return(
+                    <div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:cat.bg,borderRadius:10}}>
+                      <span style={{fontSize:18,flexShrink:0}}>{cat.emoji}</span>
+                      <span style={{fontSize:13,fontWeight:700,color:C.text,flexShrink:0}}>{fmtTime(e.ts)}</span>
+                      {parts.length>0&&<span style={{fontSize:12,color:C.muted,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{parts.join(" · ")}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TodayStats({entries}){
   const[,setTick]=useState(0);
+  const[miniJournal,setMiniJournal]=useState(null); // {cats, title}
   useEffect(()=>{
     function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
     document.addEventListener("visibilitychange",onVisible);
@@ -264,7 +318,7 @@ function TodayStats({entries}){
   const nightMin=calcNightDuration(entries);
   const{vitDone,nombrilDone}=checkMorningSoins(entries);
   const heure=now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});
-  const SC=({emoji,label,value,sub,color,bg})=>(<div style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`}}>
+  const SC=({emoji,label,value,sub,color,bg,cats})=>(<div onClick={cats?()=>setMiniJournal({cats,title:`${emoji} ${label}`}):undefined} style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`,cursor:cats?"pointer":"default"}}>
     <div style={{fontSize:18}}>{emoji}</div>
     <div style={{fontSize:20,fontWeight:700,color:color||C.text}}>{value}</div>
     <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{label}</div>
@@ -280,12 +334,13 @@ function TodayStats({entries}){
       <div style={{flex:1,background:nombrilDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:nombrilDone?C.sage:C.red,textAlign:"center"}}>🌀 Nombril {nombrilDone?"✓":"⚠️ à faire"}</div>
     </div>
     <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-      <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight}/>
-      <SC emoji="💧" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight}/>
-      <SC emoji="💩" label="Caca" value={poo} sub={lastPoo?timeAgo(lastPoo.ts):null} color={C.golden} bg={C.goldenLight}/>
+      <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight} cats={["feed"]}/>
+      <SC emoji="💧" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight} cats={["diaper_wet","diaper_both"]}/>
+      <SC emoji="💩" label="Caca" value={poo} sub={lastPoo?timeAgo(lastPoo.ts):null} color={C.golden} bg={C.goldenLight} cats={["diaper_poo","diaper_both"]}/>
       <SC emoji="🌙" label="Nuit" value={nightMin?durLabel(nightMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
-      {lastW&&<SC emoji="⚖️" label="Poids" value={`${lastW.weight} kg`} color={C.sage} bg={C.sageLight}/>}
+      {lastW&&<SC emoji="⚖️" label="Poids" value={`${lastW.weight} kg`} color={C.sage} bg={C.sageLight} cats={["weight"]}/>}
     </div>
+    {miniJournal&&<MiniJournal entries={entries} cats={miniJournal.cats} title={miniJournal.title} onClose={()=>setMiniJournal(null)}/>}
   </div>);
 }
 
@@ -361,8 +416,9 @@ function StatsTab({entries}){
   const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
 
   const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  const weightGain=weights.length>=2?(weights[weights.length-1].weight-weights[0].weight)*1000:null;
-  const daysSinceBirth=weights.length>=2?Math.round((new Date(weights[weights.length-1].ts)-new Date(weights[0].ts))/86400000):null;
+  const weightGain=weights.length>=2?(weights[weights.length-1].weight-Math.min(...weights.map(e=>e.weight)))*1000:null;
+  const minWeightEntry=weights.length>=2?weights.reduce((a,b)=>a.weight<b.weight?a:b):null;
+  const daysSinceBirth=minWeightEntry?Math.round((new Date(weights[weights.length-1].ts)-new Date(minWeightEntry.ts))/86400000):null;
   const dailyGain=weightGain&&daysSinceBirth?Math.round(weightGain/daysSinceBirth):null;
   const nightFeeds=entries.filter(e=>{if(e.cat!=="feed")return false;const h=new Date(e.ts).getHours();return h>=22||h<6;});
   const nightByDay=days7.map(d=>({...d,v:nightFeeds.filter(e=>dateZH(e.ts)===d.k).length}));
