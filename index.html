@@ -254,9 +254,10 @@ function EntryCard({entry,onDelete,onEdit}){
 }
 
 // ─── Mini journal par catégorie ───────────────────────────────────────────────
-function MiniJournal({entries, cats, title, onClose}){
+function MiniJournal({entries, cats, title, onClose, onEdit, onDelete}){
   const filtered=[...entries].filter(e=>cats.includes(e.cat)).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const groups=groupByDay(filtered);
+  const[confirm,setConfirm]=useState(null);
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 16px 40px",width:"100%",maxWidth:480,height:"75vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
@@ -281,10 +282,23 @@ function MiniJournal({entries, cats, title, onClose}){
                   if(e.pooTex)parts.push(e.pooTex);
                   if(e.note)parts.push(e.note);
                   return(
-                    <div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:cat.bg,borderRadius:10}}>
-                      <span style={{fontSize:18,flexShrink:0}}>{cat.emoji}</span>
-                      <span style={{fontSize:13,fontWeight:700,color:C.text,flexShrink:0}}>{fmtTime(e.ts)}</span>
-                      {parts.length>0&&<span style={{fontSize:12,color:C.muted,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{parts.join(" · ")}</span>}
+                    <div key={e.id} style={{position:"relative"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:cat.bg,borderRadius:10}}>
+                        <span style={{fontSize:18,flexShrink:0}}>{cat.emoji}</span>
+                        <span style={{fontSize:13,fontWeight:700,color:C.text,flexShrink:0}}>{fmtTime(e.ts)}</span>
+                        {parts.length>0&&<span style={{fontSize:12,color:C.muted,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{parts.join(" · ")}</span>}
+                        <div style={{display:"flex",gap:4,flexShrink:0}}>
+                          <button onClick={()=>{onEdit(e);onClose();}} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:15,padding:"0 3px"}}>✏️</button>
+                          <button onClick={()=>setConfirm(e.id)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:18,padding:"0 2px"}}>×</button>
+                        </div>
+                      </div>
+                      {confirm===e.id&&(
+                        <div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
+                          <span style={{fontSize:13}}>Supprimer ?</span>
+                          <button onClick={()=>{onDelete(e.id);setConfirm(null);}} style={{background:C.accent,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>Oui</button>
+                          <button onClick={()=>setConfirm(null)} style={{background:C.muted,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>Non</button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -297,7 +311,7 @@ function MiniJournal({entries, cats, title, onClose}){
   );
 }
 
-function TodayStats({entries}){
+function TodayStats({entries, onEdit, onDelete}){
   const[,setTick]=useState(0);
   const[miniJournal,setMiniJournal]=useState(null); // {cats, title}
   useEffect(()=>{
@@ -340,7 +354,7 @@ function TodayStats({entries}){
       <SC emoji="🌙" label="Nuit" value={nightMin?durLabel(nightMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
       {lastW&&<SC emoji="⚖️" label="Poids" value={`${lastW.weight} kg`} color={C.sage} bg={C.sageLight} cats={["weight"]}/>}
     </div>
-    {miniJournal&&<MiniJournal entries={entries} cats={miniJournal.cats} title={miniJournal.title} onClose={()=>setMiniJournal(null)}/>}
+    {miniJournal&&<MiniJournal entries={entries} cats={miniJournal.cats} title={miniJournal.title} onClose={()=>setMiniJournal(null)} onEdit={onEdit} onDelete={onDelete}/>}
   </div>);
 }
 
@@ -609,7 +623,7 @@ function App(){
     </div>
     <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px 100px"}}>
       {tab==="home"&&(<div style={{display:"flex",flexDirection:"column",gap:24}}>
-        <TodayStats entries={data.entries}/>
+        <TodayStats entries={data.entries} onEdit={openEdit} onDelete={deleteEntry}/>
         <div>
           <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Ajouter</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
