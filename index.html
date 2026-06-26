@@ -416,7 +416,7 @@ function StatsTab({entries}){
   const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
 
   const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  const weightGain=weights.length>=2?(weights[weights.length-1].weight-Math.min(...weights.map(e=>e.weight)))*1000:null;
+  const weightGain=weights.length>=2?Math.round((weights[weights.length-1].weight-Math.min(...weights.map(e=>e.weight)))*1000):null;
   const minWeightEntry=weights.length>=2?weights.reduce((a,b)=>a.weight<b.weight?a:b):null;
   const daysSinceBirth=minWeightEntry?Math.round((new Date(weights[weights.length-1].ts)-new Date(minWeightEntry.ts))/86400000):null;
   const dailyGain=weightGain&&daysSinceBirth?Math.round(weightGain/daysSinceBirth):null;
