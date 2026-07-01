@@ -106,7 +106,7 @@ function groupFeeds(list){
 function checkMorningSoins(entries){
   const today=todayZH();
   const te=entries.filter(e=>dateZH(e.ts)===today);
-  return{vitDone:te.some(e=>e.cat==="vitamin"&&e.vitaminDone),nombrilDone:te.some(e=>e.cat==="nombril")};
+  return{vitDone:te.some(e=>e.cat==="vitamin"&&e.vitaminDone),nombrilDone:te.some(e=>e.cat==="nombril"),probioticDone:te.some(e=>e.cat==="probiotic")};
 }
 function calcNightDuration(allEntries){
   // Cherche la plus longue pause dans une fenêtre 20h→11h
@@ -482,7 +482,7 @@ function TodayStats({entries, onEdit, onDelete}){
   const lastPoo=entries.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const lastW=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
   const nightMin=calcNightDuration(entries);
-  const{vitDone,nombrilDone}=checkMorningSoins(entries);
+  const{vitDone,nombrilDone,probioticDone}=checkMorningSoins(entries);
   const heure=now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});
   const SC=({emoji,label,value,sub,color,bg,cats})=>(<div onClick={cats?()=>setMiniJournal({cats,title:`${emoji} ${label}`}):undefined} style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`,cursor:cats?"pointer":"default"}}>
     <div style={{fontSize:18}}>{emoji}</div>
@@ -498,6 +498,7 @@ function TodayStats({entries, onEdit, onDelete}){
     <div style={{display:"flex",gap:8}}>
       <div style={{flex:1,background:vitDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:vitDone?C.sage:C.red,textAlign:"center"}}>💊 Vitamines {vitDone?"✓":"⚠️ à faire"}</div>
       <div style={{flex:1,background:nombrilDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:nombrilDone?C.sage:C.red,textAlign:"center"}}>🌀 Nombril {nombrilDone?"✓":"⚠️ à faire"}</div>
+      <div style={{flex:1,background:probioticDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:probioticDone?C.sage:C.red,textAlign:"center"}}>🦠 Probiotic {probioticDone?"✓":"⚠️ à faire"}</div>
     </div>
     <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
       <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight} cats={["feed"]}/>
@@ -549,8 +550,7 @@ function WeightChart({entries}){
   </div>);
 }
 
-function StatsTab({entries, data}){
-  const[showPDF,setShowPDF]=useState(false);
+function StatsTab({entries, data, onShowPDF}){
   const[,setTick]=useState(0);
   useEffect(()=>{
     function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
@@ -622,8 +622,7 @@ function StatsTab({entries, data}){
   const KV=({label,value,sub,color})=>(<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingBottom:8,borderBottom:`1px solid ${C.border}`,marginBottom:8}}><span style={{fontSize:13,color:C.muted}}>{label}</span><span style={{fontSize:15,fontWeight:700,color:color||C.text}}>{value}{sub&&<span style={{fontSize:11,fontWeight:400,color:C.muted,marginLeft:4}}>{sub}</span>}</span></div>);
 
   return(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-    {showPDF&&<PDFReport data={data} onClose={()=>setShowPDF(false)}/>}
-    <button onClick={()=>setShowPDF(true)} style={{background:C.accent,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+    <button onClick={onShowPDF} style={{background:C.accent,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
       📄 Générer le rapport PDF
     </button>
     <Section title="📈 Tendances (24h vs veille)">
@@ -674,6 +673,7 @@ function StatsTab({entries, data}){
     <Section title="💊 Soins — 7 derniers jours">
       <KV label="Vitamines données" value={`${vitDays}/7 jours`} color={vitDays>=6?C.sage:vitDays>=4?C.golden:C.red}/>
       <KV label="Nombril désinfecté" value={`${nombrilDays}/7 jours`} color={nombrilDays>=6?C.sage:nombrilDays>=4?C.golden:C.red}/>
+      <KV label="Probiotic donné" value={`${probioticDays}/7 jours`} color={probioticDays>=6?C.sage:probioticDays>=4?C.golden:C.red}/>
     </Section>
     <Section title="✨ Faits marquants">
       {weightGain!==null&&<div style={{background:C.sageLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.sage,marginBottom:8}}>⚖️ Rose a pris <strong>{weightGain} g</strong> depuis sa naissance{dailyGain?` (${dailyGain} g/jour)`:""}</div>}
@@ -708,6 +708,7 @@ function App(){
   const[tab,setTab]=useState("home");
   const[modal,setModal]=useState(null);
   const[syncStatus,setSyncStatus]=useState("syncing");
+  const[showPDF,setShowPDF]=useState(false);
   const saveTimer=useRef(null);
 
   useEffect(()=>{
@@ -763,7 +764,7 @@ function App(){
   const QUICK=[
     {cat:"feed"},{cat:"diaper_wet"},{cat:"diaper_poo"},{cat:"diaper_both"},
     {cat:"sleep"},{cat:"vitamin"},{cat:"nombril"},{cat:"nez"},
-    {cat:"pump"},{cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"note"},
+    {cat:"pump"},{cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"probiotic"},{cat:"note"},
   ];
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
@@ -799,7 +800,8 @@ function App(){
         </div>)}
       </div>)}
       {tab==="journal"&&<Journal entries={data.entries} onDelete={deleteEntry} onEdit={openEdit}/>}
-      {tab==="stats"&&<StatsTab entries={data.entries} data={data}/>}
+      {tab==="stats"&&<StatsTab entries={data.entries} data={data} onShowPDF={()=>setShowPDF(true)}/>}
+      {showPDF&&<PDFReport data={data} onClose={()=>setShowPDF(false)}/>}
       {tab==="weight"&&<WeightChart entries={data.entries}/>}
       {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
     </div>
@@ -823,7 +825,7 @@ function App(){
           {modalType==="sleep"&&<SleepForm onSave={handleSave} initial={modalEntry}/>}
           {modalType==="weight"&&<WeightForm onSave={handleSave} initial={modalEntry}/>}
           {modalType==="temperature"&&<TempForm onSave={handleSave} initial={modalEntry}/>}
-          {(modalType==="vitamin"||modalType==="bath"||modalType==="mood"||modalType==="note"||modalType==="nombril"||modalType==="nez")&&<SimpleForm cat={modalType} color={CATS[modalType].color} onSave={handleSave} initial={modalEntry}/>}
+          {(modalType==="vitamin"||modalType==="bath"||modalType==="mood"||modalType==="note"||modalType==="nombril"||modalType==="nez"||modalType==="probiotic")&&<SimpleForm cat={modalType} color={CATS[modalType].color} onSave={handleSave} initial={modalEntry}/>}
         </div>
       </div>
     )}
