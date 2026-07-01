@@ -418,6 +418,17 @@ function PDFReport({data,onClose}){
   const minWEntry=weights.find(e=>e.weight===minW);
   const daysSince=minWEntry&&lastW?Math.round((new Date(lastW.ts)-new Date(minWEntry.ts))/86400000):null;
   const dailyGain=weightGain&&daysSince?Math.round(weightGain/daysSince):null;
+  // Nuits 7j pour le PDF
+  function calcNightDurPDF(dayK,nextDayK){
+    const inW=entries.filter(e=>{const h=new Date(e.ts).getHours();return(dateZH(e.ts)===dayK&&h>=20)||(dateZH(e.ts)===nextDayK&&h<11);}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+    if(inW.length<2)return null;
+    let max=0;for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(g>max)max=g;}
+    return max>=60?Math.round(max):null;
+  }
+  const nightDursPDF=days7.map((d,i)=>({...d,v:i===days7.length-1?null:calcNightDurPDF(d.k,days7[i+1].k)}));
+  const validNightsPDF=nightDursPDF.map(d=>d.v).filter(Boolean);
+  const avgNightDurPDF=validNightsPDF.length?Math.round(validNightsPDF.reduce((s,x)=>s+x,0)/validNightsPDF.length):null;
+
   const allFS=groupFeeds(entries.filter(e=>e.cat==="feed")).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
   const feedGaps=allFS.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFS[i].ts))/60000).filter(g=>g>30&&g<480);
   const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
@@ -480,15 +491,16 @@ function PDFReport({data,onClose}){
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📊 Activités — 7 jours</div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",display:"block",marginBottom:6}}>
         <rect width={W} height={H} fill="#FBF7F4" rx={8}/>
+        {/* Légende en haut */}
+        {["Allait.","Pipi","Caca"].map((l,i)=>(<g key={i}><rect x={PX+i*68} y={4} width={8} height={8} fill={colors[i]} rx={1}/><text x={PX+i*68+11} y={11} fontSize={8} fill="#7A6A5A">{l}</text></g>))}
         {[0,Math.round(maxVal/2),maxVal].map((v,i)=>{const y=PY+(1-v/maxVal)*iH;return(<g key={i}><line x1={PX} y1={y} x2={W-PX} y2={y} stroke="#E8DDD4" strokeDasharray="3 3"/><text x={PX-4} y={y+4} fontSize={8} fill="#999" textAnchor="end">{v}</text></g>);})}
         {statsRows.map((r,i)=>{
           const x0=PX+i*(barW+6);
           return(<g key={i}>
             {[r.feeds,r.wet,r.poo].map((v,j)=>{const bh=Math.max(v/maxVal*iH,v?2:0);const bx=x0+j*(subW+1);return(<g key={j}><rect x={bx} y={PY+iH-bh} width={subW} height={bh} fill={colors[j]} rx={2} opacity={0.85}/>{v>0&&<text x={bx+subW/2} y={PY+iH-bh-2} fontSize={7} fill={colors[j]} textAnchor="middle" fontWeight="bold">{v}</text>}</g>);})}
-            <text x={x0+barW/2} y={H-6} fontSize={8} fill="#7A6A5A" textAnchor="middle">{r.label.split(" ").slice(0,2).join(" ")}</text>
+            <text x={x0+barW/2} y={H-4} fontSize={8} fill="#7A6A5A" textAnchor="middle">{r.label.split(" ").slice(0,2).join(" ")}</text>
           </g>);
         })}
-        {["Allait.","Pipi","Caca"].map((l,i)=>(<g key={i}><rect x={PX+i*68} y={H-14} width={8} height={8} fill={colors[i]} rx={1}/><text x={PX+i*68+11} y={H-7} fontSize={8} fill="#7A6A5A">{l}</text></g>))}
       </svg>
 
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,marginBottom:14}}>
@@ -497,6 +509,7 @@ function PDFReport({data,onClose}){
           <th style={{padding:"5px 8px",textAlign:"center"}}>🤱</th>
           <th style={{padding:"5px 8px",textAlign:"center"}}>💧</th>
           <th style={{padding:"5px 8px",textAlign:"center"}}>💩</th>
+          <th style={{padding:"5px 8px",textAlign:"center"}}>🌙 Nuit</th>
           <th style={{padding:"5px 8px",textAlign:"center"}}>💊</th>
           <th style={{padding:"5px 8px",textAlign:"center"}}>🦠</th>
           <th style={{padding:"5px 8px",textAlign:"center"}}>🌀</th>
@@ -507,6 +520,7 @@ function PDFReport({data,onClose}){
             <td style={{padding:"4px 8px",textAlign:"center"}}>{r.feeds}</td>
             <td style={{padding:"4px 8px",textAlign:"center"}}>{r.wet}</td>
             <td style={{padding:"4px 8px",textAlign:"center"}}>{r.poo}</td>
+            <td style={{padding:"4px 8px",textAlign:"center",color:C.lavender,fontWeight:600}}>{nightDursPDF[i].v?durLabel(nightDursPDF[i].v):"—"}</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:r.vit?C.sage:C.red,fontWeight:700}}>{r.vit?"✓":"✗"}</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:r.prob?C.sage:C.red,fontWeight:700}}>{r.prob?"✓":"✗"}</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:r.nom?C.sage:C.red,fontWeight:700}}>{r.nom?"✓":"✗"}</td>
@@ -516,6 +530,7 @@ function PDFReport({data,onClose}){
             <td style={{padding:"4px 8px",textAlign:"center"}}>{Math.round(statsRows.reduce((s,r)=>s+r.feeds,0)/7*10)/10}</td>
             <td style={{padding:"4px 8px",textAlign:"center"}}>{Math.round(statsRows.reduce((s,r)=>s+r.wet,0)/7*10)/10}</td>
             <td style={{padding:"4px 8px",textAlign:"center"}}>{Math.round(statsRows.reduce((s,r)=>s+r.poo,0)/7*10)/10}</td>
+            <td style={{padding:"4px 8px",textAlign:"center",color:C.lavender}}>{avgNightDurPDF?durLabel(avgNightDurPDF):"—"}</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:vitDays<7?C.red:C.sage}}>{vitDays}/7</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:probDays<7?C.red:C.sage}}>{probDays}/7</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:nombrilDays<7?C.red:C.sage}}>{nombrilDays}/7</td>
@@ -571,8 +586,13 @@ function StatsTab({entries,data,onShowPDF}){
   const minWEntry=weights.find(e=>e.weight===minW);
   const daysSince=minWEntry&&lastW?Math.round((new Date(lastW.ts)-new Date(minWEntry.ts))/86400000):null;
   const dailyGain=weightGain&&daysSince?Math.round(weightGain/daysSince):null;
-  const nightFeeds=entries.filter(e=>{if(e.cat!=="feed")return false;const h=new Date(e.ts).getHours();return h>=22||h<6;});
-  const nightByDay=days7.map(d=>({...d,v:nightFeeds.filter(e=>dateZH(e.ts)===d.k).length}));
+  // Tétées nocturnes : sessions groupées entre 22h et 6h
+  const allNightSessions=groupFeeds(entries.filter(e=>{
+    if(e.cat!=="feed")return false;
+    const h=new Date(e.ts).getHours();
+    return h>=22||h<6;
+  }));
+  const nightByDay=days7.map(d=>({...d,v:allNightSessions.filter(e=>dateZH(e.ts)===d.k).length}));
   const avgNightFeeds=avg(nightByDay.map(d=>d.v));
   const vitDays=days7.filter(({k})=>entries.some(e=>e.cat==="vitamin"&&e.vitaminDone&&dateZH(e.ts)===k)).length;
   const probDays=days7.filter(({k})=>entries.some(e=>e.cat==="probiotic"&&dateZH(e.ts)===k)).length;
