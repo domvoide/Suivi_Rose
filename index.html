@@ -23,9 +23,9 @@ button{font-family:inherit;}
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
-const FB_URL = "https://suivi-rose-17601-default-rtdb.europe-west1.firebasedatabase.app";
-const FB_PATH = `${FB_URL}/tracker.json`;
-const FB_KEY = "AIzaSyB1E5I3oN9MHcs0kaT3xv-4iaR_Hv86lhw";
+const FB_URL="https://suivi-rose-17601-default-rtdb.europe-west1.firebasedatabase.app";
+const FB_PATH=`${FB_URL}/tracker.json`;
+const FB_KEY="AIzaSyB1E5I3oN9MHcs0kaT3xv-4iaR_Hv86lhw";
 async function fbRead(){try{const r=await fetch(`${FB_PATH}?auth=${FB_KEY}`);if(!r.ok)return null;return await r.json();}catch{return null;}}
 async function fbWrite(d){try{await fetch(`${FB_PATH}?auth=${FB_KEY}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});}catch{}}
 
@@ -38,20 +38,21 @@ function localToIso(s){return new Date(s).toISOString();}
 const C={bg:"#FBF7F4",surface:"#FFFFFF",accent:"#C97A5A",accentLight:"#F0D9CC",sage:"#7A9E87",sageLight:"#D6EAD9",lavender:"#9B8EC4",lavenderLight:"#E5E1F5",sky:"#5A8EC9",skyLight:"#D6E6F5",golden:"#C9A05A",goldenLight:"#F5EBD6",red:"#C95A5A",redLight:"#FFD9D9",text:"#2D2118",muted:"#7A6A5A",border:"#E8DDD4",teal:"#5A9E9B",tealLight:"#D6ECEA"};
 
 const CATS={
-  feed:        {label:"Allaitement", emoji:"🤱", color:C.accent,   bg:C.accentLight},
-  diaper_wet:  {label:"Pipi",        emoji:"💧", color:C.sky,      bg:C.skyLight},
-  diaper_poo:  {label:"Caca",        emoji:"💩", color:C.golden,   bg:C.goldenLight},
-  diaper_both: {label:"Pipi+Caca",   emoji:"💧💩",color:C.golden,  bg:C.goldenLight},
-  sleep:       {label:"Sommeil",     emoji:"😴", color:C.lavender, bg:C.lavenderLight},
-  pump:        {label:"Tire-lait",   emoji:"🍼", color:C.accent,   bg:"#FFE8D6"},
-  weight:      {label:"Poids",       emoji:"⚖️", color:C.sage,     bg:C.sageLight},
-  vitamin:     {label:"Vitamines",   emoji:"💊", color:C.accent,   bg:"#FFE5D9"},
-  nombril:     {label:"Nombril",     emoji:"🌀", color:C.teal,     bg:C.tealLight},
-  nez:         {label:"Rinçage nez", emoji:"👃", color:C.sky,      bg:"#E0F0FF"},
-  bath:        {label:"Bain",        emoji:"🛁", color:C.sky,      bg:"#D9EEFF"},
-  temperature: {label:"Température", emoji:"🌡️", color:C.red,      bg:C.redLight},
-  mood:        {label:"Humeur",      emoji:"😊", color:C.sage,     bg:C.sageLight},
-  note:        {label:"Note",        emoji:"📝", color:C.muted,    bg:"#EEEEEE"},
+  feed:       {label:"Allaitement", emoji:"🤱",color:C.accent,  bg:C.accentLight},
+  diaper_wet: {label:"Pipi",        emoji:"💧",color:C.sky,     bg:C.skyLight},
+  diaper_poo: {label:"Caca",        emoji:"💩",color:C.golden,  bg:C.goldenLight},
+  diaper_both:{label:"Pipi+Caca",   emoji:"💧💩",color:C.golden,bg:C.goldenLight},
+  sleep:      {label:"Sommeil",     emoji:"😴",color:C.lavender,bg:C.lavenderLight},
+  pump:       {label:"Tire-lait",   emoji:"🍼",color:C.accent,  bg:"#FFE8D6"},
+  weight:     {label:"Poids",       emoji:"⚖️",color:C.sage,    bg:C.sageLight},
+  vitamin:    {label:"Vitamines",   emoji:"💊",color:C.accent,  bg:"#FFE5D9"},
+  probiotic:  {label:"Probiotic",   emoji:"🦠",color:C.teal,    bg:C.tealLight},
+  nombril:    {label:"Nombril",     emoji:"🌀",color:C.teal,    bg:C.tealLight},
+  nez:        {label:"Rinçage nez", emoji:"👃",color:C.sky,     bg:"#E0F0FF"},
+  bath:       {label:"Bain",        emoji:"🛁",color:C.sky,     bg:"#D9EEFF"},
+  temperature:{label:"Température", emoji:"🌡️",color:C.red,     bg:C.redLight},
+  mood:       {label:"Humeur",      emoji:"😊",color:C.sage,    bg:C.sageLight},
+  note:       {label:"Note",        emoji:"📝",color:C.muted,   bg:"#EEEEEE"},
 };
 
 const MOODS=["😴","😊","😢","😤","😌","🤔"];
@@ -70,9 +71,7 @@ function fmtDate(iso){
 }
 function fmtShortDate(iso){
   const d=new Date(iso);
-  const day=pad(+d.toLocaleDateString("fr-CH",{day:"numeric",timeZone:"Europe/Zurich"}));
-  const mon=pad(+d.toLocaleDateString("fr-CH",{month:"numeric",timeZone:"Europe/Zurich"}));
-  return`${day}.${mon}`;
+  return`${pad(+d.toLocaleDateString("fr-CH",{day:"numeric",timeZone:"Europe/Zurich"}))}.${pad(+d.toLocaleDateString("fr-CH",{month:"numeric",timeZone:"Europe/Zurich"}))}`;
 }
 function durLabel(m){if(!m)return"";return m<60?`${m} min`:`${Math.floor(m/60)}h${pad(m%60)}`;}
 function timeAgo(iso){
@@ -106,11 +105,14 @@ function groupFeeds(list){
 function checkMorningSoins(entries){
   const today=todayZH();
   const te=entries.filter(e=>dateZH(e.ts)===today);
-  return{vitDone:te.some(e=>e.cat==="vitamin"&&e.vitaminDone),nombrilDone:te.some(e=>e.cat==="nombril"),probioticDone:te.some(e=>e.cat==="probiotic")};
+  return{
+    vitDone:te.some(e=>e.cat==="vitamin"&&e.vitaminDone),
+    nombrilDone:te.some(e=>e.cat==="nombril"),
+    probioticDone:te.some(e=>e.cat==="probiotic"),
+  };
 }
 function calcNightDuration(allEntries){
-  // Cherche la plus longue pause dans une fenêtre 20h→11h
-  function longestPause(ws, we){
+  function longestPause(ws,we){
     const inW=allEntries.filter(e=>{const t=new Date(e.ts);return t>=ws&&t<=we;}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
     if(inW.length<2)return null;
     let max=0;
@@ -118,12 +120,9 @@ function calcNightDuration(allEntries){
     return max>=60?Math.round(max):null;
   }
   const now=new Date();
-  // Nuit actuelle : hier 20h → aujourd'hui 11h
   const ws0=new Date(now);ws0.setHours(20,0,0,0);if(ws0>now)ws0.setDate(ws0.getDate()-1);
   const we0=new Date(ws0);we0.setDate(we0.getDate()+1);we0.setHours(11,0,0,0);
-  const current=longestPause(ws0,we0);
-  if(current)return current;
-  // Nuit précédente : avant-hier 20h → hier 11h
+  const cur=longestPause(ws0,we0);if(cur)return cur;
   const ws1=new Date(ws0);ws1.setDate(ws1.getDate()-1);
   const we1=new Date(we0);we1.setDate(we1.getDate()-1);
   return longestPause(ws1,we1);
@@ -210,7 +209,7 @@ function SimpleForm({cat,color,onSave,initial}){
   const[note,setNote]=useState(initial?.note||"");
   const[mood,setMood]=useState(initial?.mood||MOODS[0]);
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    {cat==="mood"&&(<div><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Humeur</div><div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{MOODS.map(m=><button key={m} onClick={()=>setMood(m)} style={{fontSize:28,background:mood===m?C.sageLight:"none",border:`2px solid ${mood===m?C.sage:C.border}`,borderRadius:12,padding:"4px 8px",cursor:"pointer"}}>{m}</button>)}</div></div>)}
+    {cat==="mood"&&<div><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Humeur</div><div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{MOODS.map(m=><button key={m} onClick={()=>setMood(m)} style={{fontSize:28,background:mood===m?C.sageLight:"none",border:`2px solid ${mood===m?C.sage:C.border}`,borderRadius:12,padding:"4px 8px",cursor:"pointer"}}>{m}</button>)}</div></div>}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     <Inp label="Note (optionnel)" value={note} onChange={e=>setNote(e.target.value)} placeholder="..."/>
     <Btn color={color} onClick={()=>onSave({cat,mood:cat==="mood"?mood:undefined,note:note||undefined,vitaminDone:cat==="vitamin"?true:undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
@@ -245,227 +244,68 @@ function EntryCard({entry,onDelete,onEdit}){
       <button onClick={()=>onEdit(entry)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:16,padding:"0 3px"}}>✏️</button>
       <button onClick={()=>setConfirm(true)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:20,padding:"0 2px"}}>×</button>
     </div>
-    {confirm&&(<div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
+    {confirm&&<div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
       <span style={{fontSize:13}}>Supprimer ?</span>
       <Btn color={C.accent} onClick={()=>onDelete(entry.id)}>Oui</Btn>
       <Btn color={C.muted} onClick={()=>setConfirm(false)}>Non</Btn>
-    </div>)}
+    </div>}
   </div>);
 }
 
-// ─── Génération PDF ───────────────────────────────────────────────────────────
-function generatePDF(data){
-  const entries=data.entries;
-  const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  const now=new Date();
-
-  function byDay(n){
-    const days=[];
-    for(let i=n-1;i>=0;i--){
-      const d=new Date(now.getTime()-i*86400000);
-      const k=d.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});
-      days.push({k,d});
-    }
-    return days;
-  }
-  const days7=byDay(7);
-
-  // Stats par jour
-  const statsRows=days7.map(({k,d})=>{
-    const dayE=entries.filter(e=>dateZH(e.ts)===k);
-    const feeds=groupFeeds(dayE).length;
-    const wet=dayE.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").length;
-    const poo=dayE.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").length;
-    const vit=dayE.some(e=>e.cat==="vitamin"&&e.vitaminDone)?"✓":"✗";
-    const nom=dayE.some(e=>e.cat==="nombril")?"✓":"✗";
-    return{k,d,feeds,wet,poo,vit,nom};
-  });
-
-  // Prise de poids
-  const minW=weights.length?Math.min(...weights.map(e=>e.weight)):null;
-  const lastW=weights.length?weights[weights.length-1]:null;
-  const weightGain=minW&&lastW?Math.round((lastW.weight-minW)*1000):null;
-  const minWEntry=weights.find(e=>e.weight===minW);
-  const daysSince=minWEntry&&lastW?Math.round((new Date(lastW.ts)-new Date(minWEntry.ts))/86400000):null;
-  const dailyGain=weightGain&&daysSince?Math.round(weightGain/daysSince):null;
-
-  // Courbe poids SVG
-  function weightSVG(){
-    if(weights.length<2)return"<p style='color:#999'>Pas assez de pesées</p>";
-    const W=500,H=160,PX=52,PY=20,PB=30;
-    const t0=new Date(weights[0].ts).getTime(),t1=new Date(weights[weights.length-1].ts).getTime(),tot=t1-t0||1;
-    const iW=W-PX*2,iH=H-PY-PB;
-    const minWv=Math.min(...weights.map(e=>e.weight))-0.05;
-    const maxWv=Math.max(...weights.map(e=>e.weight))+0.05;
-    const tx=ts=>PX+((new Date(ts).getTime()-t0)/tot)*iW;
-    const ty=w=>PY+(1-(w-minWv)/(maxWv-minWv))*iH;
-    const pts=weights.map(e=>({x:tx(e.ts),y:ty(e.weight),w:e.weight,ts:e.ts}));
-    const path=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-    const area=`${path} L${pts[pts.length-1].x},${PY+iH} L${pts[0].x},${PY+iH} Z`;
-    const yVals=Array.from({length:5},(_,i)=>minWv+(maxWv-minWv)*i/4);
-    let svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px">`;
-    svg+=`<rect width="${W}" height="${H}" fill="#F8F4F1" rx="10"/>`;
-    yVals.forEach(v=>{
-      svg+=`<line x1="${PX}" y1="${ty(v).toFixed(1)}" x2="${W-PX}" y2="${ty(v).toFixed(1)}" stroke="#E0D8D0" stroke-dasharray="4 3"/>`;
-      svg+=`<text x="${PX-4}" y="${(ty(v)+4).toFixed(1)}" font-size="9" fill="#999" text-anchor="end">${v.toFixed(3)}</text>`;
-    });
-    svg+=`<path d="${area}" fill="#7A9E87" fill-opacity="0.1"/>`;
-    svg+=`<path d="${path}" fill="none" stroke="#7A9E87" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-    pts.forEach(p=>{
-      svg+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="#7A9E87"/>`;
-      svg+=`<text x="${p.x.toFixed(1)}" y="${(p.y-10).toFixed(1)}" font-size="9" fill="#7A9E87" text-anchor="middle" font-weight="bold">${p.w.toFixed(3)}</text>`;
-      svg+=`<text x="${p.x.toFixed(1)}" y="${(H-8).toFixed(1)}" font-size="8" fill="#999" text-anchor="middle">${fmtShortDate(p.ts)}</text>`;
-    });
-    svg+=`</svg>`;
-    return svg;
-  }
-
-  // Faits marquants
-  const allFeedSessions=groupFeeds(entries.filter(e=>e.cat==="feed")).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  const feedGaps=allFeedSessions.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFeedSessions[i].ts))/60000).filter(g=>g>30&&g<480);
-  const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
-  const nightFeeds=entries.filter(e=>{if(e.cat!=="feed")return false;const h=new Date(e.ts).getHours();return h>=22||h<6;});
-  const avgNF=nightFeeds.length?Math.round(nightFeeds.length/7*10)/10:0;
-  const vitDays=days7.filter(({k})=>entries.some(e=>e.cat==="vitamin"&&e.vitaminDone&&dateZH(e.ts)===k)).length;
-
-  const html=`<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8"/>
-<title>Rapport Suivi Rose</title>
-<style>
-  body{font-family:Arial,sans-serif;color:#2D2118;max-width:700px;margin:0 auto;padding:24px;font-size:13px;}
-  h1{color:#C97A5A;font-size:22px;margin-bottom:4px;}
-  h2{color:#C97A5A;font-size:15px;margin:24px 0 10px;border-bottom:2px solid #F0D9CC;padding-bottom:4px;}
-  .meta{color:#7A6A5A;font-size:12px;margin-bottom:20px;}
-  table{width:100%;border-collapse:collapse;font-size:12px;}
-  th{background:#F0D9CC;color:#2D2118;padding:7px 10px;text-align:center;font-weight:700;}
-  td{padding:6px 10px;text-align:center;border-bottom:1px solid #F0EAE4;}
-  tr:nth-child(even) td{background:#FBF7F4;}
-  .ok{color:#7A9E87;font-weight:700;}
-  .ko{color:#C95A5A;font-weight:700;}
-  .card{background:#FBF7F4;border-radius:10px;padding:12px 16px;margin-bottom:10px;border-left:4px solid #C97A5A;}
-  .card.green{border-left-color:#7A9E87;}
-  .card.lavender{border-left-color:#9B8EC4;}
-  .card.red{border-left-color:#C95A5A;}
-  .fact{font-size:13px;color:#2D2118;}
-  .footer{margin-top:30px;font-size:11px;color:#999;text-align:center;border-top:1px solid #E8DDD4;padding-top:12px;}
-  @media print{body{padding:12px;}h2{page-break-after:avoid;}}
-</style>
-</head>
-<body>
-<h1>🌸 Rapport Suivi Rose</h1>
-<div class="meta">
-  Généré le ${now.toLocaleDateString("fr-CH",{weekday:"long",day:"numeric",month:"long",year:"numeric"})} à ${now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit"})}<br/>
-  Période : ${days7[0].d.toLocaleDateString("fr-CH",{day:"numeric",month:"long"})} → ${days7[6].d.toLocaleDateString("fr-CH",{day:"numeric",month:"long",year:"numeric"})}
-</div>
-
-<h2>📊 Activités — 7 derniers jours</h2>
-<table>
-  <thead><tr><th>Date</th><th>🤱 Allait.</th><th>💧 Pipi</th><th>💩 Caca</th><th>💊 Vit.</th><th>🌀 Nombril</th></tr></thead>
-  <tbody>
-    ${statsRows.map(r=>`<tr>
-      <td style="text-align:left;font-weight:600">${r.d.toLocaleDateString("fr-CH",{weekday:"short",day:"numeric",month:"short"})}</td>
-      <td>${r.feeds}</td><td>${r.wet}</td><td>${r.poo}</td>
-      <td class="${r.vit==="✓"?"ok":"ko"}">${r.vit}</td>
-      <td class="${r.nom==="✓"?"ok":"ko"}">${r.nom}</td>
-    </tr>`).join("")}
-    <tr style="font-weight:700;background:#F0D9CC">
-      <td style="text-align:left">Moyenne/jour</td>
-      <td>${Math.round(statsRows.reduce((s,r)=>s+r.feeds,0)/7*10)/10}</td>
-      <td>${Math.round(statsRows.reduce((s,r)=>s+r.wet,0)/7*10)/10}</td>
-      <td>${Math.round(statsRows.reduce((s,r)=>s+r.poo,0)/7*10)/10}</td>
-      <td class="ok">${vitDays}/7</td><td>—</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2>📈 Courbe de poids</h2>
-${weightSVG()}
-${weights.length>=2?`
-<div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
-  <div class="card green"><div class="fact">Poids de naissance : <strong>${weights[0].weight} kg</strong></div></div>
-  ${minW?`<div class="card red"><div class="fact">Poids minimum : <strong>${minW} kg</strong></div></div>`:""}
-  <div class="card green"><div class="fact">Dernier poids : <strong>${lastW.weight} kg</strong> (${fmtShortDate(lastW.ts)})</div></div>
-  ${weightGain!==null?`<div class="card green"><div class="fact">Prise de poids : <strong>+${weightGain} g</strong>${dailyGain?` · ${dailyGain} g/jour`:""}</div></div>`:""}
-</div>`:""}
-
-<h2>✨ Faits marquants</h2>
-${avgGap?`<div class="card"><div class="fact">🤱 Intervalle moyen entre tétées : <strong>${durLabel(avgGap)}</strong></div></div>`:""}
-${avgNF>0?`<div class="card lavender"><div class="fact">🌙 Tétées nocturnes (22h-6h) : <strong>${avgNF} par nuit</strong> en moyenne</div></div>`:""}
-${vitDays<7?`<div class="card red"><div class="fact">💊 Vitamines oubliées <strong>${7-vitDays} jour${7-vitDays>1?"s":""}</strong> cette semaine</div></div>`:`<div class="card green"><div class="fact">💊 Vitamines données <strong>tous les jours</strong> cette semaine ✓</div></div>`}
-${weightGain!==null&&dailyGain?`<div class="card green"><div class="fact">⚖️ ${data.babyName} reprend bien du poids : <strong>+${weightGain} g</strong> depuis le minimum (${dailyGain} g/jour)</div></div>`:""}
-
-<div class="footer">Suivi Rose · domvoide.github.io/Suivi_Rose · ${now.getFullYear()}</div>
-</body></html>`;
-
-  const win=window.open("","_blank");
-  if(!win)return;
-  win.document.write(html);
-  win.document.close();
-  setTimeout(()=>win.print(),800);
-}
-
-function MiniJournal({entries, cats, title, onClose, onEdit, onDelete}){
+function MiniJournal({entries,cats,title,onClose,onEdit,onDelete}){
   const filtered=[...entries].filter(e=>cats.includes(e.cat)).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const groups=groupByDay(filtered);
   const[confirm,setConfirm]=useState(null);
-  return(
-    <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 16px 40px",width:"100%",maxWidth:480,height:"75vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-          <div style={{fontSize:17,fontWeight:800,color:C.text}}>{title}</div>
-          <button onClick={onClose} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
-        </div>
-        {!filtered.length&&<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.</div>}
-        <div style={{display:"flex",flexDirection:"column",gap:18}}>
-          {Object.entries(groups).map(([day,es])=>(
-            <div key={day}>
-              <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:6}}>{fmtDate(es[0].ts)}</div>
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {es.map(e=>{
-                  const cat=CATS[e.cat]||CATS.note;
-                  const parts=[];
-                  if(e.side)parts.push(e.side==="Les deux"?"Les deux seins":`Sein ${e.side}`);
-                  if(e.duration)parts.push(durLabel(e.duration));
-                  if(e.quantity)parts.push(`${e.quantity} ml`);
-                  if(e.weight)parts.push(`${e.weight} kg`);
-                  if(e.pooColor)parts.push(e.pooColor);
-                  if(e.pooTex)parts.push(e.pooTex);
-                  if(e.note)parts.push(e.note);
-                  return(
-                    <div key={e.id} style={{position:"relative"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:cat.bg,borderRadius:10}}>
-                        <span style={{fontSize:18,flexShrink:0}}>{cat.emoji}</span>
-                        <span style={{fontSize:13,fontWeight:700,color:C.text,flexShrink:0}}>{fmtTime(e.ts)}</span>
-                        {parts.length>0&&<span style={{fontSize:12,color:C.muted,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{parts.join(" · ")}</span>}
-                        <div style={{display:"flex",gap:4,flexShrink:0}}>
-                          <button onClick={()=>{onEdit(e);onClose();}} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:15,padding:"0 3px"}}>✏️</button>
-                          <button onClick={()=>setConfirm(e.id)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:18,padding:"0 2px"}}>×</button>
-                        </div>
-                      </div>
-                      {confirm===e.id&&(
-                        <div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
-                          <span style={{fontSize:13}}>Supprimer ?</span>
-                          <button onClick={()=>{onDelete(e.id);setConfirm(null);}} style={{background:C.accent,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>Oui</button>
-                          <button onClick={()=>setConfirm(null)} style={{background:C.muted,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>Non</button>
-                        </div>
-                      )}
+  return(<div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 16px 40px",width:"100%",maxWidth:480,height:"75vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+        <div style={{fontSize:17,fontWeight:800}}>{title}</div>
+        <button onClick={onClose} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
+      </div>
+      {!filtered.length&&<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.</div>}
+      <div style={{display:"flex",flexDirection:"column",gap:18}}>
+        {Object.entries(groups).map(([day,es])=>(
+          <div key={day}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:6}}>{fmtDate(es[0].ts)}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {es.map(e=>{
+                const cat=CATS[e.cat]||CATS.note;
+                const parts=[];
+                if(e.side)parts.push(e.side==="Les deux"?"Les deux seins":`Sein ${e.side}`);
+                if(e.duration)parts.push(durLabel(e.duration));
+                if(e.quantity)parts.push(`${e.quantity} ml`);
+                if(e.weight)parts.push(`${e.weight} kg`);
+                if(e.pooColor)parts.push(e.pooColor);
+                if(e.pooTex)parts.push(e.pooTex);
+                if(e.note)parts.push(e.note);
+                return(<div key={e.id} style={{position:"relative"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:cat.bg,borderRadius:10}}>
+                    <span style={{fontSize:18,flexShrink:0}}>{cat.emoji}</span>
+                    <span style={{fontSize:13,fontWeight:700,flexShrink:0}}>{fmtTime(e.ts)}</span>
+                    {parts.length>0&&<span style={{fontSize:12,color:C.muted,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{parts.join(" · ")}</span>}
+                    <div style={{display:"flex",gap:4,flexShrink:0}}>
+                      <button onClick={()=>{onEdit(e);onClose();}} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:15,padding:"0 3px"}}>✏️</button>
+                      <button onClick={()=>setConfirm(e.id)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:18,padding:"0 2px"}}>×</button>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                  {confirm===e.id&&<div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
+                    <span style={{fontSize:13}}>Supprimer ?</span>
+                    <button onClick={()=>{onDelete(e.id);setConfirm(null);}} style={{background:C.accent,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>Oui</button>
+                    <button onClick={()=>setConfirm(null)} style={{background:C.muted,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>Non</button>
+                  </div>}
+                </div>);
+              })}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
-  );
+  </div>);
 }
 
-function TodayStats({entries, onEdit, onDelete}){
+function TodayStats({entries,onEdit,onDelete}){
   const[,setTick]=useState(0);
-  const[miniJournal,setMiniJournal]=useState(null); // {cats, title}
+  const[miniJournal,setMiniJournal]=useState(null);
   useEffect(()=>{
     function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
     document.addEventListener("visibilitychange",onVisible);
@@ -484,21 +324,30 @@ function TodayStats({entries, onEdit, onDelete}){
   const nightMin=calcNightDuration(entries);
   const{vitDone,nombrilDone,probioticDone}=checkMorningSoins(entries);
   const heure=now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});
-  const SC=({emoji,label,value,sub,color,bg,cats})=>(<div onClick={cats?()=>setMiniJournal({cats,title:`${emoji} ${label}`}):undefined} style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`,cursor:cats?"pointer":"default"}}>
-    <div style={{fontSize:18}}>{emoji}</div>
-    <div style={{fontSize:20,fontWeight:700,color:color||C.text}}>{value}</div>
-    <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{label}</div>
-    {sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}
-  </div>);
+  const SC=({emoji,label,value,sub,color,bg,cats})=>(
+    <div onClick={cats?()=>setMiniJournal({cats,title:`${emoji} ${label}`}):undefined}
+      style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`,cursor:cats?"pointer":"default"}}>
+      <div style={{fontSize:18}}>{emoji}</div>
+      <div style={{fontSize:20,fontWeight:700,color:color||C.text}}>{value}</div>
+      <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{label}</div>
+      {sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}
+    </div>
+  );
   return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
     <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>Dernières 24h</div>
       <div style={{fontSize:13,fontWeight:600,color:C.accent}}>🕐 {heure}</div>
     </div>
-    <div style={{display:"flex",gap:8}}>
-      <div style={{flex:1,background:vitDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:vitDone?C.sage:C.red,textAlign:"center"}}>💊 Vitamines {vitDone?"✓":"⚠️ à faire"}</div>
-      <div style={{flex:1,background:nombrilDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:nombrilDone?C.sage:C.red,textAlign:"center"}}>🌀 Nombril {nombrilDone?"✓":"⚠️ à faire"}</div>
-      <div style={{flex:1,background:probioticDone?C.sageLight:C.redLight,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:probioticDone?C.sage:C.red,textAlign:"center"}}>🦠 Probiotic {probioticDone?"✓":"⚠️ à faire"}</div>
+    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+      {[
+        {done:vitDone,   emoji:"💊",label:"Vitamines"},
+        {done:probioticDone,emoji:"🦠",label:"Probiotic"},
+        {done:nombrilDone,emoji:"🌀",label:"Nombril"},
+      ].map(({done,emoji,label})=>(
+        <div key={label} style={{flex:1,minWidth:90,background:done?C.sageLight:C.redLight,borderRadius:12,padding:"7px 10px",fontSize:11,fontWeight:700,color:done?C.sage:C.red,textAlign:"center"}}>
+          {emoji} {label} {done?"✓":"⚠️"}
+        </div>
+      ))}
     </div>
     <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
       <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight} cats={["feed"]}/>
@@ -515,10 +364,12 @@ function Journal({entries,onDelete,onEdit}){
   const groups=groupByDay(entries);
   if(!entries.length)return<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.<br/><span style={{fontSize:32}}>👶</span></div>;
   return(<div style={{display:"flex",flexDirection:"column",gap:22}}>
-    {Object.entries(groups).map(([day,es])=>(<div key={day}>
-      <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:8}}>{fmtDate(es[0].ts)}</div>
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>{es.map(e=><EntryCard key={e.id} entry={e} onDelete={onDelete} onEdit={onEdit}/>)}</div>
-    </div>))}
+    {Object.entries(groups).map(([day,es])=>(
+      <div key={day}>
+        <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:8}}>{fmtDate(es[0].ts)}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>{es.map(e=><EntryCard key={e.id} entry={e} onDelete={onDelete} onEdit={onEdit}/>)}</div>
+      </div>
+    ))}
   </div>);
 }
 
@@ -550,7 +401,153 @@ function WeightChart({entries}){
   </div>);
 }
 
-function StatsTab({entries, data, onShowPDF}){
+function PDFReport({data,onClose}){
+  const entries=data.entries;
+  const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const now=new Date();
+  function byDay(n){const days=[];for(let i=n-1;i>=0;i--){const d=new Date(now.getTime()-i*86400000);const k=d.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});days.push({k,d});}return days;}
+  const days7=byDay(7);
+  const statsRows=days7.map(({k,d})=>{
+    const dayE=entries.filter(e=>dateZH(e.ts)===k);
+    return{k,d,feeds:groupFeeds(dayE).length,wet:dayE.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").length,poo:dayE.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").length,vit:dayE.some(e=>e.cat==="vitamin"&&e.vitaminDone),prob:dayE.some(e=>e.cat==="probiotic"),nom:dayE.some(e=>e.cat==="nombril"),label:d.toLocaleDateString("fr-CH",{weekday:"short",day:"numeric",month:"short"})};
+  });
+  const minW=weights.length?Math.min(...weights.map(e=>e.weight)):null;
+  const lastW=weights.length?weights[weights.length-1]:null;
+  const firstW=weights.length?weights[0]:null;
+  const weightGain=minW&&lastW?Math.round((lastW.weight-minW)*1000):null;
+  const minWEntry=weights.find(e=>e.weight===minW);
+  const daysSince=minWEntry&&lastW?Math.round((new Date(lastW.ts)-new Date(minWEntry.ts))/86400000):null;
+  const dailyGain=weightGain&&daysSince?Math.round(weightGain/daysSince):null;
+  const allFS=groupFeeds(entries.filter(e=>e.cat==="feed")).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const feedGaps=allFS.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFS[i].ts))/60000).filter(g=>g>30&&g<480);
+  const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
+  const nightFeeds=entries.filter(e=>{if(e.cat!=="feed")return false;const h=new Date(e.ts).getHours();return h>=22||h<6;});
+  const avgNF=Math.round(nightFeeds.length/7*10)/10;
+  const vitDays=days7.filter(({k})=>entries.some(e=>e.cat==="vitamin"&&e.vitaminDone&&dateZH(e.ts)===k)).length;
+  const probDays=days7.filter(({k})=>entries.some(e=>e.cat==="probiotic"&&dateZH(e.ts)===k)).length;
+  const nombrilDays=days7.filter(({k})=>entries.some(e=>e.cat==="nombril"&&dateZH(e.ts)===k)).length;
+
+  const maxVal=Math.max(...statsRows.map(r=>Math.max(r.feeds,r.wet,r.poo)),1);
+  const W=520,H=110,PX=30,PY=8,PB=22,iH=H-PY-PB;
+  const n=statsRows.length,barW=(W-PX*2-(n-1)*6)/n,subW=(barW-4)/3;
+
+  function WeightSVG(){
+    if(weights.length<2)return null;
+    const W2=520,H2=140,PX2=52,PY2=14,PB2=24,iW=W2-PX2*2,iH2=H2-PY2-PB2;
+    const t0=new Date(weights[0].ts).getTime(),t1=new Date(weights[weights.length-1].ts).getTime(),tot=t1-t0||1;
+    const minWv=Math.min(...weights.map(e=>e.weight))-0.03,maxWv=Math.max(...weights.map(e=>e.weight))+0.03;
+    const tx=ts=>PX2+((new Date(ts).getTime()-t0)/tot)*iW;
+    const ty=w=>PY2+(1-(w-minWv)/(maxWv-minWv))*iH2;
+    const pts=weights.map(e=>({x:tx(e.ts),y:ty(e.weight),w:e.weight,ts:e.ts}));
+    const path=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const area=`${path} L${pts[pts.length-1].x},${PY2+iH2} L${pts[0].x},${PY2+iH2} Z`;
+    return(<svg viewBox={`0 0 ${W2} ${H2}`} style={{width:"100%",display:"block"}}>
+      <rect width={W2} height={H2} fill="#FBF7F4" rx={8}/>
+      {Array.from({length:4},(_,i)=>minWv+(maxWv-minWv)*i/3).map((v,i)=>(
+        <g key={i}><line x1={PX2} y1={ty(v)} x2={W2-PX2} y2={ty(v)} stroke="#E8DDD4" strokeDasharray="3 3"/><text x={PX2-4} y={ty(v)+4} fontSize={9} fill="#999" textAnchor="end">{v.toFixed(3)}</text></g>
+      ))}
+      <path d={area} fill="#7A9E87" fillOpacity={0.1}/>
+      <path d={path} fill="none" stroke="#7A9E87" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>
+      {pts.map((p,i)=>(<g key={i}>
+        <circle cx={p.x} cy={p.y} r={5} fill="#7A9E87" stroke="white" strokeWidth={1.5}/>
+        <text x={p.x} y={p.y-10} fontSize={9} fill="#7A9E87" textAnchor="middle" fontWeight="bold">{p.w.toFixed(3)}</text>
+        <text x={p.x} y={H2-8} fontSize={8} fill="#999" textAnchor="middle">{fmtShortDate(p.ts)}</text>
+      </g>))}
+    </svg>);
+  }
+
+  const dateRange=`${days7[0].d.toLocaleDateString("fr-CH",{day:"numeric",month:"long"})} – ${days7[6].d.toLocaleDateString("fr-CH",{day:"numeric",month:"long",year:"numeric"})}`;
+  const colors=["#C97A5A","#5A8EC9","#C9A05A"];
+
+  return(<div style={{position:"fixed",inset:0,background:"#F0EAE4",zIndex:300,overflowY:"auto"}}>
+    <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"12px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10}}>
+      <button onClick={onClose} style={{background:"none",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontWeight:700,color:C.muted,fontSize:13}}>← Retour</button>
+      <span style={{fontWeight:700,color:C.accent,fontSize:15}}>📄 Aperçu rapport</span>
+      <button onClick={()=>window.print()} style={{background:C.accent,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",fontWeight:700,fontSize:13}}>🖨️ Imprimer</button>
+    </div>
+    <div id="pdf-page" style={{background:"white",maxWidth:680,margin:"20px auto",padding:"28px 36px",boxShadow:"0 4px 24px rgba(0,0,0,0.1)",borderRadius:8}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,borderBottom:`2px solid ${C.accentLight}`,paddingBottom:12}}>
+        <div>
+          <div style={{fontSize:20,fontWeight:800,color:C.accent}}>🌸 Suivi de {data.babyName}</div>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>{dateRange}</div>
+        </div>
+        <div style={{textAlign:"right",fontSize:11,color:C.muted}}>
+          {now.toLocaleDateString("fr-CH",{day:"numeric",month:"long",year:"numeric"})}<br/>
+          {now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit"})}
+        </div>
+      </div>
+
+      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📊 Activités — 7 jours</div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",display:"block",marginBottom:6}}>
+        <rect width={W} height={H} fill="#FBF7F4" rx={8}/>
+        {[0,Math.round(maxVal/2),maxVal].map((v,i)=>{const y=PY+(1-v/maxVal)*iH;return(<g key={i}><line x1={PX} y1={y} x2={W-PX} y2={y} stroke="#E8DDD4" strokeDasharray="3 3"/><text x={PX-4} y={y+4} fontSize={8} fill="#999" textAnchor="end">{v}</text></g>);})}
+        {statsRows.map((r,i)=>{
+          const x0=PX+i*(barW+6);
+          return(<g key={i}>
+            {[r.feeds,r.wet,r.poo].map((v,j)=>{const bh=Math.max(v/maxVal*iH,v?2:0);const bx=x0+j*(subW+1);return(<g key={j}><rect x={bx} y={PY+iH-bh} width={subW} height={bh} fill={colors[j]} rx={2} opacity={0.85}/>{v>0&&<text x={bx+subW/2} y={PY+iH-bh-2} fontSize={7} fill={colors[j]} textAnchor="middle" fontWeight="bold">{v}</text>}</g>);})}
+            <text x={x0+barW/2} y={H-6} fontSize={8} fill="#7A6A5A" textAnchor="middle">{r.label.split(" ").slice(0,2).join(" ")}</text>
+          </g>);
+        })}
+        {["Allait.","Pipi","Caca"].map((l,i)=>(<g key={i}><rect x={PX+i*68} y={H-14} width={8} height={8} fill={colors[i]} rx={1}/><text x={PX+i*68+11} y={H-7} fontSize={8} fill="#7A6A5A">{l}</text></g>))}
+      </svg>
+
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,marginBottom:14}}>
+        <thead><tr style={{background:C.accentLight}}>
+          <th style={{padding:"5px 8px",textAlign:"left"}}>Jour</th>
+          <th style={{padding:"5px 8px",textAlign:"center"}}>🤱</th>
+          <th style={{padding:"5px 8px",textAlign:"center"}}>💧</th>
+          <th style={{padding:"5px 8px",textAlign:"center"}}>💩</th>
+          <th style={{padding:"5px 8px",textAlign:"center"}}>💊</th>
+          <th style={{padding:"5px 8px",textAlign:"center"}}>🦠</th>
+          <th style={{padding:"5px 8px",textAlign:"center"}}>🌀</th>
+        </tr></thead>
+        <tbody>
+          {statsRows.map((r,i)=>(<tr key={i} style={{background:i%2===0?"#FBF7F4":"white"}}>
+            <td style={{padding:"4px 8px",fontWeight:600}}>{r.label}</td>
+            <td style={{padding:"4px 8px",textAlign:"center"}}>{r.feeds}</td>
+            <td style={{padding:"4px 8px",textAlign:"center"}}>{r.wet}</td>
+            <td style={{padding:"4px 8px",textAlign:"center"}}>{r.poo}</td>
+            <td style={{padding:"4px 8px",textAlign:"center",color:r.vit?C.sage:C.red,fontWeight:700}}>{r.vit?"✓":"✗"}</td>
+            <td style={{padding:"4px 8px",textAlign:"center",color:r.prob?C.sage:C.red,fontWeight:700}}>{r.prob?"✓":"✗"}</td>
+            <td style={{padding:"4px 8px",textAlign:"center",color:r.nom?C.sage:C.red,fontWeight:700}}>{r.nom?"✓":"✗"}</td>
+          </tr>))}
+          <tr style={{background:C.accentLight,fontWeight:700}}>
+            <td style={{padding:"4px 8px"}}>Moy./jour</td>
+            <td style={{padding:"4px 8px",textAlign:"center"}}>{Math.round(statsRows.reduce((s,r)=>s+r.feeds,0)/7*10)/10}</td>
+            <td style={{padding:"4px 8px",textAlign:"center"}}>{Math.round(statsRows.reduce((s,r)=>s+r.wet,0)/7*10)/10}</td>
+            <td style={{padding:"4px 8px",textAlign:"center"}}>{Math.round(statsRows.reduce((s,r)=>s+r.poo,0)/7*10)/10}</td>
+            <td style={{padding:"4px 8px",textAlign:"center",color:vitDays<7?C.red:C.sage}}>{vitDays}/7</td>
+            <td style={{padding:"4px 8px",textAlign:"center",color:probDays<7?C.red:C.sage}}>{probDays}/7</td>
+            <td style={{padding:"4px 8px",textAlign:"center",color:nombrilDays<7?C.red:C.sage}}>{nombrilDays}/7</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📈 Courbe de poids</div>
+      <WeightSVG/>
+      {weights.length>=2&&<div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+        {[{l:"Naissance",v:`${firstW.weight} kg`,c:C.muted},{l:"Min.",v:`${minW} kg`,c:C.red},{l:"Dernier",v:`${lastW.weight} kg (${fmtShortDate(lastW.ts)})`,c:C.sage},weightGain!=null?{l:"Reprise",v:`+${weightGain} g${dailyGain?` · ${dailyGain} g/j`:""}`,c:C.sage}:null].filter(Boolean).map((item,i)=>(
+          <div key={i} style={{background:"#FBF7F4",borderRadius:8,padding:"5px 10px",borderLeft:`3px solid ${item.c}`,fontSize:11}}>
+            <span style={{color:C.muted}}>{item.l} : </span><strong style={{color:item.c}}>{item.v}</strong>
+          </div>
+        ))}
+      </div>}
+
+      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>✨ Faits marquants</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
+        {avgGap&&<div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${C.accent}`,fontSize:11}}>🤱 Intervalle moyen : <strong>{durLabel(avgGap)}</strong></div>}
+        {avgNF>0&&<div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${C.lavender}`,fontSize:11}}>🌙 Tétées nocturnes : <strong>{avgNF}/nuit</strong></div>}
+        <div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${vitDays<7?C.red:C.sage}`,fontSize:11}}>💊 Vitamines : <strong style={{color:vitDays<7?C.red:C.sage}}>{vitDays}/7 j</strong></div>
+        <div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${probDays<7?C.red:C.sage}`,fontSize:11}}>🦠 Probiotic : <strong style={{color:probDays<7?C.red:C.sage}}>{probDays}/7 j</strong></div>
+        <div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${nombrilDays<7?C.red:C.sage}`,fontSize:11}}>🌀 Nombril : <strong style={{color:nombrilDays<7?C.red:C.sage}}>{nombrilDays}/7 j</strong></div>
+        {weightGain!=null&&<div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${C.sage}`,fontSize:11}}>⚖️ Reprise : <strong style={{color:C.sage}}>+{weightGain} g{dailyGain?` (${dailyGain} g/j)`:""}</strong></div>}
+      </div>
+    </div>
+    <style>{`@media print{body>*:not(#pdf-page){display:none!important;}#pdf-page{margin:0!important;box-shadow:none!important;border-radius:0!important;max-width:100%!important;padding:12px 18px!important;}@page{size:A4;margin:8mm;}}`}</style>
+  </div>);
+}
+
+function StatsTab({entries,data,onShowPDF}){
   const[,setTick]=useState(0);
   useEffect(()=>{
     function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
@@ -558,76 +555,59 @@ function StatsTab({entries, data, onShowPDF}){
     return()=>document.removeEventListener("visibilitychange",onVisible);
   },[]);
   const now=new Date();
-  function byDay(n){
-    const days=[];
-    for(let i=n-1;i>=0;i--){
-      const d=new Date(now.getTime()-i*86400000);
-      const k=d.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});
-      const label=i===0?"Auj.":i===1?"Hier":`${pad(d.getDate())}.${pad(d.getMonth()+1)}`;
-      days.push({k,label,d});
-    }
-    return days;
-  }
+  function byDay(n){const days=[];for(let i=n-1;i>=0;i--){const d=new Date(now.getTime()-i*86400000);const k=d.toLocaleDateString("fr-CH",{timeZone:"Europe/Zurich"});const label=i===0?"Auj.":i===1?"Hier":`${pad(d.getDate())}.${pad(d.getMonth()+1)}`;days.push({k,label,d});}return days;}
   const days7=byDay(7);
   const feedsByDay=days7.map(d=>({...d,v:groupFeeds(entries.filter(e=>dateZH(e.ts)===d.k)).length}));
   const wetByDay=days7.map(d=>({...d,v:entries.filter(e=>(e.cat==="diaper_wet"||e.cat==="diaper_both")&&dateZH(e.ts)===d.k).length}));
   const pooByDay=days7.map(d=>({...d,v:entries.filter(e=>(e.cat==="diaper_poo"||e.cat==="diaper_both")&&dateZH(e.ts)===d.k).length}));
   const avg=arr=>arr.length?Math.round(arr.reduce((s,x)=>s+x,0)/arr.length*10)/10:0;
-  const avgFeeds=avg(feedsByDay.map(d=>d.v));
-  const avgWet=avg(wetByDay.map(d=>d.v));
-  const avgPoo=avg(pooByDay.map(d=>d.v));
-
-  // Intervalle entre sessions complètes
-  const allFeedSessions=groupFeeds(entries.filter(e=>e.cat==="feed")).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  const feedGaps=allFeedSessions.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFeedSessions[i].ts))/60000).filter(g=>g>30&&g<480);
+  const allFS=groupFeeds(entries.filter(e=>e.cat==="feed")).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const feedGaps=allFS.slice(1).map((e,i)=>(new Date(e.ts)-new Date(allFS[i].ts))/60000).filter(g=>g>30&&g<480);
   const avgGap=feedGaps.length?Math.round(feedGaps.reduce((s,x)=>s+x,0)/feedGaps.length):null;
-
   const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  const weightGain=weights.length>=2?Math.round((weights[weights.length-1].weight-Math.min(...weights.map(e=>e.weight)))*1000):null;
-  const minWeightEntry=weights.length>=2?weights.reduce((a,b)=>a.weight<b.weight?a:b):null;
-  const daysSinceBirth=minWeightEntry?Math.round((new Date(weights[weights.length-1].ts)-new Date(minWeightEntry.ts))/86400000):null;
-  const dailyGain=weightGain&&daysSinceBirth?Math.round(weightGain/daysSinceBirth):null;
+  const minW=weights.length?Math.min(...weights.map(e=>e.weight)):null;
+  const lastW=weights.length?weights[weights.length-1]:null;
+  const weightGain=minW&&lastW?Math.round((lastW.weight-minW)*1000):null;
+  const minWEntry=weights.find(e=>e.weight===minW);
+  const daysSince=minWEntry&&lastW?Math.round((new Date(lastW.ts)-new Date(minWEntry.ts))/86400000):null;
+  const dailyGain=weightGain&&daysSince?Math.round(weightGain/daysSince):null;
   const nightFeeds=entries.filter(e=>{if(e.cat!=="feed")return false;const h=new Date(e.ts).getHours();return h>=22||h<6;});
   const nightByDay=days7.map(d=>({...d,v:nightFeeds.filter(e=>dateZH(e.ts)===d.k).length}));
   const avgNightFeeds=avg(nightByDay.map(d=>d.v));
-  const vitDays=days7.filter(d=>entries.some(e=>e.cat==="vitamin"&&e.vitaminDone&&dateZH(e.ts)===d.k)).length;
-  const nombrilDays=days7.filter(d=>entries.some(e=>e.cat==="nombril"&&dateZH(e.ts)===d.k)).length;
+  const vitDays=days7.filter(({k})=>entries.some(e=>e.cat==="vitamin"&&e.vitaminDone&&dateZH(e.ts)===k)).length;
+  const probDays=days7.filter(({k})=>entries.some(e=>e.cat==="probiotic"&&dateZH(e.ts)===k)).length;
+  const nombrilDays=days7.filter(({k})=>entries.some(e=>e.cat==="nombril"&&dateZH(e.ts)===k)).length;
   const e48a=entries.filter(e=>new Date(e.ts)>=new Date(now-48*3600000)&&new Date(e.ts)<new Date(now-24*3600000));
   const e48b=entries.filter(e=>new Date(e.ts)>=new Date(now-24*3600000));
   const trend=(cat,prev,curr)=>{const p=prev.filter(e=>e.cat===cat).length,c=curr.filter(e=>e.cat===cat).length;if(c>p)return{arrow:"↑",color:C.sage};if(c<p)return{arrow:"↓",color:C.red};return{arrow:"→",color:C.muted};};
-  const tFeed=trend("feed",e48a,e48b),tWet=trend("diaper_wet",e48a,e48b),tPoo=trend("diaper_poo",e48a,e48b);
-
   function calcNightDur(dayK,nextDayK){
     const inW=entries.filter(e=>{const h=new Date(e.ts).getHours();return(dateZH(e.ts)===dayK&&h>=20)||(dateZH(e.ts)===nextDayK&&h<11);}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
     if(inW.length<2)return null;
-    let max=0;
-    for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(g>max)max=g;}
+    let max=0;for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(g>max)max=g;}
     return max>=60?Math.round(max):null;
   }
   const nightDurations=days7.map((d,i)=>{if(i===days7.length-1)return{...d,v:null};return{...d,v:calcNightDur(d.k,days7[i+1].k)};});
   const validNights=nightDurations.map(d=>d.v).filter(Boolean);
   const avgNightDur=validNights.length?Math.round(validNights.reduce((s,x)=>s+x,0)/validNights.length):null;
 
-  function BarChart({data,color}){
-    const m=Math.max(...data.map(d=>d.v),1);
+  function BarChart({data:bdata,color}){
+    const m=Math.max(...bdata.map(d=>d.v),1);
     return(<div style={{display:"flex",alignItems:"flex-end",gap:4,height:60}}>
-      {data.map((d,i)=>(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+      {bdata.map((d,i)=>(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
         <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v||""}</div>
         <div style={{width:"100%",background:color,opacity:0.15+0.85*(d.v/m),borderRadius:"4px 4px 0 0",height:Math.max(d.v/m*44,d.v?4:0)}}/>
         <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
       </div>))}
     </div>);
   }
-  const Section=({title,children})=>(<div style={{background:C.surface,borderRadius:16,padding:"16px",border:`1px solid ${C.border}`}}><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>{title}</div>{children}</div>);
-  const KV=({label,value,sub,color})=>(<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingBottom:8,borderBottom:`1px solid ${C.border}`,marginBottom:8}}><span style={{fontSize:13,color:C.muted}}>{label}</span><span style={{fontSize:15,fontWeight:700,color:color||C.text}}>{value}{sub&&<span style={{fontSize:11,fontWeight:400,color:C.muted,marginLeft:4}}>{sub}</span>}</span></div>);
+  const Sec=({title,children})=>(<div style={{background:C.surface,borderRadius:16,padding:"16px",border:`1px solid ${C.border}`}}><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>{title}</div>{children}</div>);
+  const KV=({label,value,color})=>(<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingBottom:8,borderBottom:`1px solid ${C.border}`,marginBottom:8}}><span style={{fontSize:13,color:C.muted}}>{label}</span><span style={{fontSize:15,fontWeight:700,color:color||C.text}}>{value}</span></div>);
 
   return(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-    <button onClick={onShowPDF} style={{background:C.accent,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-      📄 Générer le rapport PDF
-    </button>
-    <Section title="📈 Tendances (24h vs veille)">
+    <button onClick={onShowPDF} style={{background:C.accent,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>📄 Générer le rapport PDF</button>
+    <Sec title="📈 Tendances (24h vs veille)">
       <div style={{display:"flex",gap:10}}>
-        {[["🤱","Allaitement",tFeed],["💧","Pipi",tWet],["💩","Caca",tPoo]].map(([emoji,label,t])=>(
+        {[["🤱","Allaitement",trend("feed",e48a,e48b)],["💧","Pipi",trend("diaper_wet",e48a,e48b)],["💩","Caca",trend("diaper_poo",e48a,e48b)]].map(([emoji,label,t])=>(
           <div key={label} style={{flex:1,background:C.bg,borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
             <div style={{fontSize:22}}>{emoji}</div>
             <div style={{fontSize:22,fontWeight:800,color:t.color}}>{t.arrow}</div>
@@ -635,54 +615,50 @@ function StatsTab({entries, data, onShowPDF}){
           </div>
         ))}
       </div>
-    </Section>
-    <Section title="📊 Moyennes sur 7 jours">
-      <KV label="Allaitements / jour" value={avgFeeds}/>
-      <KV label="Pipi / jour" value={avgWet}/>
-      <KV label="Caca / jour" value={avgPoo}/>
+    </Sec>
+    <Sec title="📊 Moyennes sur 7 jours">
+      <KV label="Allaitements / jour" value={avg(feedsByDay.map(d=>d.v))}/>
+      <KV label="Pipi / jour" value={avg(wetByDay.map(d=>d.v))}/>
+      <KV label="Caca / jour" value={avg(pooByDay.map(d=>d.v))}/>
       <KV label="Tétées nocturnes (22h-6h)" value={avgNightFeeds}/>
       {avgGap&&<KV label="Intervalle moyen entre tétées" value={durLabel(avgGap)}/>}
-    </Section>
-    {avgNightDur&&<Section title="🌙 Durée des nuits — 7 jours">
+    </Sec>
+    {avgNightDur&&<Sec title="🌙 Durée des nuits — 7 jours">
       <div style={{display:"flex",alignItems:"flex-end",gap:4,height:80,marginBottom:8}}>
-        {nightDurations.map((d,i)=>{
-          const m=Math.max(...nightDurations.map(x=>x.v||0),1);
-          return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-            <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v?durLabel(d.v):""}</div>
-            <div style={{width:"100%",background:C.lavender,opacity:d.v?0.15+0.85*(d.v/m):0.08,borderRadius:"4px 4px 0 0",height:d.v?Math.max(d.v/m*60,4):3}}/>
-            <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
-          </div>);
+        {nightDurations.map((d,i)=>{const m=Math.max(...nightDurations.map(x=>x.v||0),1);return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+          <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v?durLabel(d.v):""}</div>
+          <div style={{width:"100%",background:C.lavender,opacity:d.v?0.15+0.85*(d.v/m):0.08,borderRadius:"4px 4px 0 0",height:d.v?Math.max(d.v/m*60,4):3}}/>
+          <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
+        </div>);
         })}
       </div>
       <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
         <span style={{color:C.muted}}>Moyenne</span>
         <span style={{fontWeight:700,color:C.lavender}}>{durLabel(avgNightDur)}</span>
       </div>
-      {avgNightDur>=300&&<div style={{background:C.lavenderLight,borderRadius:10,padding:"8px 12px",fontSize:12,color:C.lavender,fontWeight:600,marginTop:8}}>🌙 Bonne nuit ! +5h en moyenne</div>}
-      {avgNightDur<240&&<div style={{background:C.redLight,borderRadius:10,padding:"8px 12px",fontSize:12,color:C.red,fontWeight:600,marginTop:8}}>⚠️ Nuits courtes — moins de 4h en moyenne</div>}
-    </Section>}
-    <Section title="🤱 Allaitements par jour"><BarChart data={feedsByDay} color={C.accent}/></Section>
-    <Section title="💧 Pipi par jour"><BarChart data={wetByDay} color={C.sky}/></Section>
-    <Section title="💩 Caca par jour"><BarChart data={pooByDay} color={C.golden}/></Section>
-    {weights.length>=2&&<Section title="⚖️ Croissance">
-      <KV label="Poids initial" value={`${weights[0].weight} kg`} sub={fmtShortDate(weights[0].ts)}/>
-      <KV label="Poids actuel" value={`${weights[weights.length-1].weight} kg`} sub={fmtShortDate(weights[weights.length-1].ts)}/>
-      {weightGain!==null&&<KV label="Prise de poids totale" value={`+${weightGain} g`} color={C.sage}/>}
+    </Sec>}
+    <Sec title="🤱 Allaitements par jour"><BarChart data={feedsByDay} color={C.accent}/></Sec>
+    <Sec title="💧 Pipi par jour"><BarChart data={wetByDay} color={C.sky}/></Sec>
+    <Sec title="💩 Caca par jour"><BarChart data={pooByDay} color={C.golden}/></Sec>
+    {weights.length>=2&&<Sec title="⚖️ Croissance">
+      <KV label="Poids initial" value={`${weights[0].weight} kg`}/>
+      <KV label="Poids minimum" value={`${minW} kg`} color={C.red}/>
+      <KV label="Poids actuel" value={`${lastW.weight} kg`} color={C.sage}/>
+      {weightGain!=null&&<KV label="Prise de poids totale" value={`+${weightGain} g`} color={C.sage}/>}
       {dailyGain&&<KV label="Gain moyen / jour" value={`+${dailyGain} g`} color={dailyGain>=15&&dailyGain<=40?C.sage:C.golden}/>}
-    </Section>}
-    <Section title="💊 Soins — 7 derniers jours">
-      <KV label="Vitamines données" value={`${vitDays}/7 jours`} color={vitDays>=6?C.sage:vitDays>=4?C.golden:C.red}/>
+    </Sec>}
+    <Sec title="💊 Soins — 7 derniers jours">
+      <KV label="Vitamines" value={`${vitDays}/7 jours`} color={vitDays>=6?C.sage:vitDays>=4?C.golden:C.red}/>
+      <KV label="Probiotic" value={`${probDays}/7 jours`} color={probDays>=6?C.sage:probDays>=4?C.golden:C.red}/>
       <KV label="Nombril désinfecté" value={`${nombrilDays}/7 jours`} color={nombrilDays>=6?C.sage:nombrilDays>=4?C.golden:C.red}/>
-      <KV label="Probiotic donné" value={`${probioticDays}/7 jours`} color={probioticDays>=6?C.sage:probioticDays>=4?C.golden:C.red}/>
-    </Section>
-    <Section title="✨ Faits marquants">
-      {weightGain!==null&&<div style={{background:C.sageLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.sage,marginBottom:8}}>⚖️ Rose a pris <strong>{weightGain} g</strong> depuis sa naissance{dailyGain?` (${dailyGain} g/jour)`:""}</div>}
-      {avgGap&&<div style={{background:C.accentLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.accent,marginBottom:8}}>🤱 Elle se nourrit en moyenne toutes les <strong>{durLabel(avgGap)}</strong></div>}
-      {avgNightFeeds>0&&<div style={{background:C.lavenderLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.lavender,marginBottom:8}}>🌙 <strong>{avgNightFeeds}</strong> tétée{avgNightFeeds>1?"s":""} nocturne{avgNightFeeds>1?"s":""} par nuit en moyenne</div>}
+    </Sec>
+    <Sec title="✨ Faits marquants">
+      {weightGain!=null&&<div style={{background:C.sageLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.sage,marginBottom:8}}>⚖️ Rose a pris <strong>{weightGain} g</strong> depuis le minimum{dailyGain?` (${dailyGain} g/jour)`:""}</div>}
+      {avgGap&&<div style={{background:C.accentLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.accent,marginBottom:8}}>🤱 Intervalle moyen entre tétées : <strong>{durLabel(avgGap)}</strong></div>}
+      {avgNightFeeds>0&&<div style={{background:C.lavenderLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.lavender,marginBottom:8}}>🌙 <strong>{avgNightFeeds}</strong> tétée{avgNightFeeds>1?"s":""} nocturne{avgNightFeeds>1?"s":""} par nuit</div>}
       {vitDays<7&&<div style={{background:C.redLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.red,marginBottom:8}}>💊 Vitamines oubliées <strong>{7-vitDays} jour{7-vitDays>1?"s":""}</strong> cette semaine</div>}
-      {avgPoo<1&&<div style={{background:C.goldenLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.golden,marginBottom:8}}>💩 Moins d'un caca par jour en moyenne — à surveiller</div>}
-      {avgPoo>=3&&<div style={{background:C.goldenLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.golden,marginBottom:8}}>💩 <strong>{avgPoo}</strong> cacas par jour — fréquence élevée, normal chez le nourrisson</div>}
-    </Section>
+      {probDays<7&&<div style={{background:C.redLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.red,marginBottom:8}}>🦠 Probiotic oublié <strong>{7-probDays} jour{7-probDays>1?"s":""}</strong> cette semaine</div>}
+    </Sec>
   </div>);
 }
 
@@ -696,7 +672,7 @@ function Settings({data,onUpdate,syncStatus}){
     <div style={{background:sc.bg,borderRadius:12,padding:"12px 16px",fontSize:13,color:sc.c,fontWeight:600}}>{sc.t}</div>
     <Inp label="Prénom du bébé" value={name} onChange={e=>setName(e.target.value)}/>
     <Inp label="Date de naissance" type="date" value={birth} onChange={e=>setBirth(e.target.value)}/>
-    <Inp label="Votre prénom (Papa / Maman)" value={author} onChange={e=>saveAuthor(e.target.value)} placeholder="ex: Papa"/>
+    <Inp label="Votre prénom" value={author} onChange={e=>saveAuthor(e.target.value)} placeholder="ex: Papa"/>
     <Btn color={C.accent} onClick={()=>onUpdate({babyName:name,birthDate:birth})}>Sauvegarder</Btn>
     <hr style={{border:"none",borderTop:`1px solid ${C.border}`}}/>
     <div style={{fontSize:13,color:C.muted}}><strong>{data.entries.length}</strong> entrées</div>
@@ -737,19 +713,15 @@ function App(){
     return()=>{document.removeEventListener("visibilitychange",onVisible);clearInterval(id);};
   },[]);
 
-  function persist(next){
-    setData(next);setSyncStatus("syncing");
-    clearTimeout(saveTimer.current);
-    saveTimer.current=setTimeout(()=>{fbWrite(next).then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("error"));},800);
-  }
+  function persist(next){setData(next);setSyncStatus("syncing");clearTimeout(saveTimer.current);saveTimer.current=setTimeout(()=>{fbWrite(next).then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("error"));},800);}
   const author=()=>{try{return localStorage.getItem("bt_author")||"";}catch{return"";}};
   function addEntry(payload){const entry={id:Date.now()+Math.random(),...payload,author:author()||undefined};persist({...data,entries:[entry,...data.entries]});setModal(null);}
-  function editEntry(payload){const updated=data.entries.map(e=>e.id===modal.entry.id?{...e,...payload}:e);persist({...data,entries:updated});setModal(null);}
+  function editEntry(payload){persist({...data,entries:data.entries.map(e=>e.id===modal.entry.id?{...e,...payload}:e)});setModal(null);}
   function deleteEntry(id){persist({...data,entries:data.entries.filter(e=>e.id!==id)});}
   function updateMeta(patch){persist({...data,...patch});}
   const isEditing=modal&&modal.entry;
-  const modalType=modal?.type,modalEntry=modal?.entry;
-  function handleSave(payload){isEditing?editEntry(payload):addEntry(payload);}
+  const mType=modal?.type,mEntry=modal?.entry;
+  function handleSave(p){isEditing?editEntry(p):addEntry(p);}
   function openModal(cat){setModal({type:cat});}
   function openEdit(entry){setModal({type:entry.cat,entry});}
 
@@ -762,14 +734,16 @@ function App(){
   }
 
   const QUICK=[
-    {cat:"feed"},{cat:"diaper_wet"},{cat:"diaper_poo"},{cat:"diaper_both"},
-    {cat:"sleep"},{cat:"vitamin"},{cat:"nombril"},{cat:"nez"},
-    {cat:"pump"},{cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"probiotic"},{cat:"note"},
+    "feed","diaper_wet","diaper_poo","diaper_both",
+    "sleep","vitamin","probiotic","nombril",
+    "nez","pump","weight","temperature","bath","note",
   ];
+  const SIMPLE_CATS=["vitamin","bath","mood","note","nombril","nez","probiotic"];
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
 
   return(<div style={{background:C.bg,minHeight:"100vh",color:C.text}}>
+    {showPDF&&<PDFReport data={data} onClose={()=>setShowPDF(false)}/>}
     <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"14px 20px 12px",position:"sticky",top:0,zIndex:40}}>
       <div style={{maxWidth:480,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
@@ -785,7 +759,7 @@ function App(){
         <div>
           <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Ajouter</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-            {QUICK.map(({cat})=>{const c=CATS[cat];return(
+            {QUICK.map(cat=>{const c=CATS[cat];return(
               <button key={cat} onClick={()=>openModal(cat)} style={{background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"10px 4px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
                 <span style={{fontSize:22}}>{c.emoji}</span>
                 <span style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{c.label}</span>
@@ -801,7 +775,6 @@ function App(){
       </div>)}
       {tab==="journal"&&<Journal entries={data.entries} onDelete={deleteEntry} onEdit={openEdit}/>}
       {tab==="stats"&&<StatsTab entries={data.entries} data={data} onShowPDF={()=>setShowPDF(true)}/>}
-      {showPDF&&<PDFReport data={data} onClose={()=>setShowPDF(false)}/>}
       {tab==="weight"&&<WeightChart entries={data.entries}/>}
       {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
     </div>
@@ -816,16 +789,16 @@ function App(){
       <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
         <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,height:"80vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-            <div style={{fontSize:18,fontWeight:800}}>{isEditing?"✏️ Modifier":<>{CATS[modalType]?.emoji} {CATS[modalType]?.label}</>}</div>
+            <div style={{fontSize:18,fontWeight:800}}>{isEditing?"✏️ Modifier":<>{CATS[mType]?.emoji} {CATS[mType]?.label}</>}</div>
             <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
           </div>
-          {modalType==="feed"&&<FeedForm onSave={handleSave} initial={modalEntry}/>}
-          {modalType==="pump"&&<PumpForm onSave={handleSave} initial={modalEntry}/>}
-          {(modalType==="diaper_wet"||modalType==="diaper_poo"||modalType==="diaper_both")&&<DiaperForm type={modalType} onSave={handleSave} initial={modalEntry}/>}
-          {modalType==="sleep"&&<SleepForm onSave={handleSave} initial={modalEntry}/>}
-          {modalType==="weight"&&<WeightForm onSave={handleSave} initial={modalEntry}/>}
-          {modalType==="temperature"&&<TempForm onSave={handleSave} initial={modalEntry}/>}
-          {(modalType==="vitamin"||modalType==="bath"||modalType==="mood"||modalType==="note"||modalType==="nombril"||modalType==="nez"||modalType==="probiotic")&&<SimpleForm cat={modalType} color={CATS[modalType].color} onSave={handleSave} initial={modalEntry}/>}
+          {mType==="feed"&&<FeedForm onSave={handleSave} initial={mEntry}/>}
+          {mType==="pump"&&<PumpForm onSave={handleSave} initial={mEntry}/>}
+          {(mType==="diaper_wet"||mType==="diaper_poo"||mType==="diaper_both")&&<DiaperForm type={mType} onSave={handleSave} initial={mEntry}/>}
+          {mType==="sleep"&&<SleepForm onSave={handleSave} initial={mEntry}/>}
+          {mType==="weight"&&<WeightForm onSave={handleSave} initial={mEntry}/>}
+          {mType==="temperature"&&<TempForm onSave={handleSave} initial={mEntry}/>}
+          {SIMPLE_CATS.includes(mType)&&<SimpleForm cat={mType} color={CATS[mType].color} onSave={handleSave} initial={mEntry}/>}
         </div>
       </div>
     )}
