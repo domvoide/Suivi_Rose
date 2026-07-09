@@ -439,7 +439,7 @@ function PDFReport({data,onClose}){
   const nombrilDays=days7.filter(({k})=>entries.some(e=>e.cat==="nombril"&&dateZH(e.ts)===k)).length;
 
   const maxVal=Math.max(...statsRows.map(r=>Math.max(r.feeds,r.wet,r.poo)),1);
-  const W=520,H=110,PX=30,PY=8,PB=22,iH=H-PY-PB;
+  const W=520,H=130,PX=30,PY=8,PB=36,iH=H-PY-PB;
   const n=statsRows.length,barW=(W-PX*2-(n-1)*6)/n,subW=(barW-4)/3;
 
   function WeightSVG(){
@@ -491,14 +491,14 @@ function PDFReport({data,onClose}){
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📊 Activités — 7 jours</div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",display:"block",marginBottom:6}}>
         <rect width={W} height={H} fill="#FBF7F4" rx={8}/>
-        {/* Légende en haut */}
-        {["Allait.","Pipi","Caca"].map((l,i)=>(<g key={i}><rect x={PX+i*68} y={4} width={8} height={8} fill={colors[i]} rx={1}/><text x={PX+i*68+11} y={11} fontSize={8} fill="#7A6A5A">{l}</text></g>))}
+        {/* Légende entre barres et dates */}
+        {["Allait.","Pipi","Caca"].map((l,i)=>(<g key={i}><rect x={PX+i*68} y={H-14} width={8} height={8} fill={colors[i]} rx={1}/><text x={PX+i*68+11} y={H-7} fontSize={8} fill="#7A6A5A">{l}</text></g>))}
         {[0,Math.round(maxVal/2),maxVal].map((v,i)=>{const y=PY+(1-v/maxVal)*iH;return(<g key={i}><line x1={PX} y1={y} x2={W-PX} y2={y} stroke="#E8DDD4" strokeDasharray="3 3"/><text x={PX-4} y={y+4} fontSize={8} fill="#999" textAnchor="end">{v}</text></g>);})}
         {statsRows.map((r,i)=>{
           const x0=PX+i*(barW+6);
           return(<g key={i}>
             {[r.feeds,r.wet,r.poo].map((v,j)=>{const bh=Math.max(v/maxVal*iH,v?2:0);const bx=x0+j*(subW+1);return(<g key={j}><rect x={bx} y={PY+iH-bh} width={subW} height={bh} fill={colors[j]} rx={2} opacity={0.85}/>{v>0&&<text x={bx+subW/2} y={PY+iH-bh-2} fontSize={7} fill={colors[j]} textAnchor="middle" fontWeight="bold">{v}</text>}</g>);})}
-            <text x={x0+barW/2} y={H-4} fontSize={8} fill="#7A6A5A" textAnchor="middle">{r.label.split(" ").slice(0,2).join(" ")}</text>
+            <text x={x0+barW/2} y={PY+iH+12} fontSize={8} fill="#7A6A5A" textAnchor="middle">{r.label.split(" ").slice(0,2).join(" ")}</text>
           </g>);
         })}
       </svg>
@@ -562,7 +562,194 @@ function PDFReport({data,onClose}){
   </div>);
 }
 
-function StatsTab({entries,data,onShowPDF}){
+// ─── Rapport mensuel (aperçu HTML statique intégré) ──────────────────────────
+function MonthlyReport({data,onClose}){
+  const entries=data.entries;
+  const now=new Date();
+  const weights=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+
+  // Découpe en semaines (7 jours) depuis la naissance ou depuis 4 semaines
+  const birth=data.birthDate?new Date(data.birthDate):weights[0]?new Date(weights[0].ts):now;
+  const totalDays=Math.min(28,Math.max(7,Math.floor((now-birth)/86400000)+1));
+  const nWeeks=Math.max(1,Math.ceil(totalDays/7));
+
+  function weekRange(i){
+    const start=new Date(now.getTime()-(nWeeks-i)*7*86400000);
+    const end=new Date(start.getTime()+7*86400000-1);
+    return{start,end};
+  }
+  function inRange(ts,start,end){const t=new Date(ts);return t>=start&&t<=end;}
+
+  const weeks=Array.from({length:nWeeks},(_,i)=>{
+    const{start,end}=weekRange(i);
+    const we=entries.filter(e=>inRange(e.ts,start,end));
+    const feedSessions=groupFeeds(we);
+    const feedsPerDay=Math.round(feedSessions.length/7*10)/10;
+    const wet=Math.round(we.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").length/7*10)/10;
+    const poo=Math.round(we.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").length/7*10)/10;
+    const nightFeedSessions=groupFeeds(we.filter(e=>{const h=new Date(e.ts).getHours();return h>=22||h<6;}));
+    const nightFeeds=Math.round(nightFeedSessions.length/7*10)/10;
+    // Nuits: moyenne des plus longues pauses par nuit dans la semaine
+    const nightDurs=[];
+    for(let d=0;d<7;d++){
+      const dayStart=new Date(start.getTime()+d*86400000);
+      const ws=new Date(dayStart);ws.setHours(20,0,0,0);
+      const we2=new Date(ws);we2.setDate(we2.getDate()+1);we2.setHours(11,0,0,0);
+      const inW=entries.filter(e=>{const t=new Date(e.ts);return t>=ws&&t<=we2;}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+      if(inW.length>=2){
+        let max=0;
+        for(let j=1;j<inW.length;j++){const g=(new Date(inW[j].ts)-new Date(inW[j-1].ts))/60000;if(g>max)max=g;}
+        if(max>=60)nightDurs.push(max);
+      }
+    }
+    const avgNightDur=nightDurs.length?Math.round(nightDurs.reduce((s,x)=>s+x,0)/nightDurs.length):null;
+    const label=`S${i+1} · ${start.toLocaleDateString("fr-CH",{day:"2-digit",month:"2-digit"})}-${end.toLocaleDateString("fr-CH",{day:"2-digit",month:"2-digit"})}`;
+    return{feedsPerDay,wet,poo,nightFeeds,avgNightDur,label};
+  });
+
+  const minW=weights.length?Math.min(...weights.map(e=>e.weight)):null;
+  const lastW=weights.length?weights[weights.length-1]:null;
+  const firstW=weights.length?weights[0]:null;
+  const weightGain=minW&&lastW?Math.round((lastW.weight-minW)*1000):null;
+
+  const first=weeks[0],last=weeks[weeks.length-1];
+  const dFeed=last&&first?Math.round((last.feedsPerDay-first.feedsPerDay)*10)/10:0;
+  const dPoo=last&&first?Math.round((last.poo-first.poo)*10)/10:0;
+  const dNightFeeds=last&&first?Math.round((last.nightFeeds-first.nightFeeds)*10)/10:0;
+  const dNightDur=last&&first&&last.avgNightDur&&first.avgNightDur?last.avgNightDur-first.avgNightDur:null;
+
+  // SVG courbe de poids (toutes les pesées)
+  function WeightSVG(){
+    if(weights.length<2)return<div style={{color:"#999",fontSize:11,padding:"10px 0"}}>Pas assez de pesées pour tracer une courbe.</div>;
+    const W=560,H=90,PX=48,PY=14,PB=22,iW=W-PX*2,iH=H-PY-PB;
+    const t0=new Date(weights[0].ts).getTime(),t1=new Date(weights[weights.length-1].ts).getTime(),tot=t1-t0||1;
+    const minWv=Math.min(...weights.map(e=>e.weight))-0.05,maxWv=Math.max(...weights.map(e=>e.weight))+0.05;
+    const tx=ts=>PX+((new Date(ts).getTime()-t0)/tot)*iW;
+    const ty=w=>PY+(1-(w-minWv)/(maxWv-minWv))*iH;
+    const pts=weights.map(e=>({x:tx(e.ts),y:ty(e.weight),w:e.weight,ts:e.ts,isMin:e.weight===minW}));
+    const path=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const area=`${path} L${pts[pts.length-1].x},${PY+iH} L${pts[0].x},${PY+iH} Z`;
+    return(<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",display:"block"}}>
+      <rect width={W} height={H} fill="#FBF7F4" rx={6}/>
+      {[minWv,(minWv+maxWv)/2,maxWv].map((v,i)=>(<g key={i}><line x1={PX} y1={ty(v)} x2={W-PX} y2={ty(v)} stroke="#E8DDD4" strokeDasharray="3 2"/><text x={PX-4} y={ty(v)+3} fontSize={8} fill="#aaa" textAnchor="end">{v.toFixed(2)}</text></g>))}
+      <path d={area} fill="#7A9E87" fillOpacity={0.1}/>
+      <path d={path} fill="none" stroke="#7A9E87" strokeWidth={2.5} strokeLinejoin="round"/>
+      {pts.map((p,i)=>(<g key={i}>
+        <circle cx={p.x} cy={p.y} r={p.isMin?5:4} fill={p.isMin?"#C95A5A":"#7A9E87"} stroke="white" strokeWidth={1.5}/>
+        <text x={p.x} y={p.y-8} fontSize={8} fill={p.isMin?"#C95A5A":"#7A9E87"} textAnchor="middle" fontWeight="bold">{p.w.toFixed(3)}</text>
+        <text x={p.x} y={H-6} fontSize={7} fill="#aaa" textAnchor="middle">{fmtShortDate(p.ts)}</text>
+      </g>))}
+    </svg>);
+  }
+
+  function MiniTrend({label,data,color,fmt}){
+    const W=180,H=44,vals=data.filter(v=>v!=null);
+    if(vals.length<2)return null;
+    const mn=Math.min(...vals),mx=Math.max(...vals);
+    const range=mx-mn||1;
+    const step=W/(data.length-1||1);
+    const pts=data.map((v,i)=>v==null?null:{x:i*step+8,y:H-8-((v-mn)/range)*(H-16)});
+    const validPts=pts.filter(Boolean);
+    const path=validPts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const delta=vals[vals.length-1]-vals[0];
+    return(<div style={{background:"#FBF7F4",borderRadius:8,padding:"6px 8px"}}>
+      <div style={{fontSize:9,fontWeight:700,color:"#7A6A5A",display:"flex",justifyContent:"space-between",marginBottom:3}}>
+        <span>{label}</span><span style={{fontWeight:800,color:delta<=0?"#7A9E87":"#C95A5A"}}>{delta>0?"+":""}{fmt?fmt(delta):delta.toFixed(1)}</span>
+      </div>
+      <svg viewBox={`0 0 ${W+16} ${H}`} style={{width:"100%",display:"block"}}>
+        <rect width={W+16} height={H} fill="white" rx={4}/>
+        <path d={path} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round"/>
+        {pts.map((p,i)=>p&&(<g key={i}>
+          <circle cx={p.x} cy={p.y} r={3} fill={color}/>
+          <text x={p.x} y={p.y-6} fontSize={7} fill={color} textAnchor="middle">{fmt?fmt(data[i]):data[i]}</text>
+          <text x={p.x} y={H-2} fontSize={6} fill="#aaa" textAnchor="middle">S{i+1}</text>
+        </g>))}
+      </svg>
+    </div>);
+  }
+
+  const rangeLabel=`${birth.toLocaleDateString("fr-CH",{day:"numeric",month:"long"})} – ${now.toLocaleDateString("fr-CH",{day:"numeric",month:"long",year:"numeric"})}`;
+
+  return(<div style={{position:"fixed",inset:0,background:"#F0EAE4",zIndex:300,overflowY:"auto"}}>
+    <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"12px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10}}>
+      <button onClick={onClose} style={{background:"none",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontWeight:700,color:C.muted,fontSize:13}}>← Retour</button>
+      <span style={{fontWeight:700,color:C.accent,fontSize:15}}>📅 Rapport mensuel</span>
+      <button onClick={()=>window.print()} style={{background:C.accent,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",fontWeight:700,fontSize:13}}>🖨️ Imprimer</button>
+    </div>
+
+    <div id="monthly-page" style={{background:"white",maxWidth:680,margin:"20px auto",padding:"26px 34px",boxShadow:"0 4px 24px rgba(0,0,0,0.1)",borderRadius:8,fontSize:11}}>
+      <div style={{display:"flex",justifyContent:"space-between",borderBottom:`2px solid ${C.accentLight}`,paddingBottom:10,marginBottom:14}}>
+        <div>
+          <div style={{fontSize:18,fontWeight:800,color:C.accent}}>Suivi mensuel — {data.babyName}</div>
+          <div style={{fontSize:10,color:C.muted,marginTop:2}}>{rangeLabel}</div>
+        </div>
+        <div style={{fontSize:10,color:C.muted}}>{now.toLocaleDateString("fr-CH",{day:"numeric",month:"long",year:"numeric"})}</div>
+      </div>
+
+      <div style={{fontSize:10,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,margin:"12px 0 6px"}}>📈 Courbe de poids</div>
+      <WeightSVG/>
+      {weights.length>=2&&<div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:6}}>
+        <div style={{background:C.bg,borderRadius:6,padding:"3px 8px",fontSize:10,borderLeft:`3px solid ${C.sage}`}}>Naissance <strong>{firstW.weight} kg</strong></div>
+        <div style={{background:C.bg,borderRadius:6,padding:"3px 8px",fontSize:10,borderLeft:`3px solid ${C.red}`}}>Minimum <strong>{minW} kg</strong></div>
+        <div style={{background:C.bg,borderRadius:6,padding:"3px 8px",fontSize:10,borderLeft:`3px solid ${C.sage}`}}>Dernier <strong>{lastW.weight} kg</strong> ({fmtShortDate(lastW.ts)})</div>
+        {weightGain!=null&&<div style={{background:C.bg,borderRadius:6,padding:"3px 8px",fontSize:10,borderLeft:`3px solid ${C.sage}`}}>Reprise <strong>+{weightGain} g</strong></div>}
+      </div>}
+
+      <div style={{fontSize:10,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 6px"}}>📊 Tendances par semaine</div>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
+        <thead><tr style={{background:C.accentLight}}>
+          <th style={{padding:"4px 6px",textAlign:"left"}}>Semaine</th>
+          <th style={{padding:"4px 6px"}}>Allait.</th>
+          <th style={{padding:"4px 6px"}}>Pipi</th>
+          <th style={{padding:"4px 6px"}}>Caca</th>
+          <th style={{padding:"4px 6px"}}>Nuit</th>
+          <th style={{padding:"4px 6px"}}>Noct.</th>
+        </tr></thead>
+        <tbody>
+          {weeks.map((w,i)=>(<tr key={i} style={{background:i%2===0?"white":"#FBF7F4"}}>
+            <td style={{padding:"3px 6px",fontWeight:600}}>{w.label}</td>
+            <td style={{padding:"3px 6px",textAlign:"center"}}>{w.feedsPerDay}</td>
+            <td style={{padding:"3px 6px",textAlign:"center"}}>{w.wet}</td>
+            <td style={{padding:"3px 6px",textAlign:"center"}}>{w.poo}</td>
+            <td style={{padding:"3px 6px",textAlign:"center",color:C.lavender}}>{w.avgNightDur?durLabel(w.avgNightDur):"—"}</td>
+            <td style={{padding:"3px 6px",textAlign:"center"}}>{w.nightFeeds}</td>
+          </tr>))}
+          {weeks.length>1&&<tr style={{background:C.accentLight,fontWeight:700}}>
+            <td style={{padding:"3px 6px"}}>Évolution S1→S{weeks.length}</td>
+            <td style={{padding:"3px 6px",textAlign:"center",color:dFeed<=0?C.sage:C.red}}>{dFeed>0?"+":""}{dFeed}</td>
+            <td style={{padding:"3px 6px",textAlign:"center"}}>—</td>
+            <td style={{padding:"3px 6px",textAlign:"center",color:dPoo<=0?C.sage:C.golden}}>{dPoo>0?"+":""}{dPoo}</td>
+            <td style={{padding:"3px 6px",textAlign:"center",color:C.lavender}}>{dNightDur!=null?(dNightDur>0?"+":"")+durLabel(Math.abs(dNightDur)):"—"}</td>
+            <td style={{padding:"3px 6px",textAlign:"center",color:dNightFeeds<=0?C.sage:C.red}}>{dNightFeeds>0?"+":""}{dNightFeeds}</td>
+          </tr>}
+        </tbody>
+      </table>
+
+      {weeks.length>1&&<>
+        <div style={{fontSize:10,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 6px"}}>📉 Évolution des indicateurs</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          <MiniTrend label="Allaitements/jour" data={weeks.map(w=>w.feedsPerDay)} color={C.accent}/>
+          <MiniTrend label="Durée des nuits" data={weeks.map(w=>w.avgNightDur)} color={C.lavender} fmt={v=>durLabel(v)}/>
+          <MiniTrend label="Caca/jour" data={weeks.map(w=>w.poo)} color={C.golden}/>
+          <MiniTrend label="Tétées nocturnes" data={weeks.map(w=>w.nightFeeds)} color={C.sky}/>
+        </div>
+      </>}
+
+      <div style={{fontSize:10,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 6px"}}>✨ Évolution depuis le début</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+        {weightGain!=null&&<div style={{background:C.bg,borderRadius:8,padding:"6px 10px",borderLeft:`3px solid ${C.sage}`}}><strong style={{color:C.sage}}>+{weightGain} g</strong><div style={{fontSize:9,color:C.muted}}>Reprise depuis le minimum</div></div>}
+        {dNightDur!=null&&<div style={{background:C.bg,borderRadius:8,padding:"6px 10px",borderLeft:`3px solid ${C.lavender}`}}><strong style={{color:C.lavender}}>{dNightDur>0?"+":""}{durLabel(Math.abs(dNightDur))}</strong><div style={{fontSize:9,color:C.muted}}>Durée des nuits</div></div>}
+        <div style={{background:C.bg,borderRadius:8,padding:"6px 10px",borderLeft:`3px solid ${C.accent}`}}><strong style={{color:C.accent}}>{dFeed>0?"+":""}{dFeed}/jour</strong><div style={{fontSize:9,color:C.muted}}>Allaitements</div></div>
+        <div style={{background:C.bg,borderRadius:8,padding:"6px 10px",borderLeft:`3px solid ${C.sky}`}}><strong style={{color:C.sky}}>{dNightFeeds>0?"+":""}{dNightFeeds}/nuit</strong><div style={{fontSize:9,color:C.muted}}>Tétées nocturnes</div></div>
+      </div>
+
+      <div style={{marginTop:14,borderTop:`1px solid ${C.border}`,paddingTop:8,fontSize:9,color:"#bbb",textAlign:"center"}}>Rapport généré par Suivi Rose</div>
+    </div>
+    <style>{`@media print{body>*:not(#monthly-page){display:none!important;}#monthly-page{margin:0!important;box-shadow:none!important;border-radius:0!important;max-width:100%!important;padding:12px 18px!important;}@page{size:A4;margin:8mm;}}`}</style>
+  </div>);
+}
+
+function StatsTab({entries,data,onShowPDF,onShowMonthly}){
   const[,setTick]=useState(0);
   useEffect(()=>{
     function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
@@ -624,7 +811,8 @@ function StatsTab({entries,data,onShowPDF}){
   const KV=({label,value,color})=>(<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingBottom:8,borderBottom:`1px solid ${C.border}`,marginBottom:8}}><span style={{fontSize:13,color:C.muted}}>{label}</span><span style={{fontSize:15,fontWeight:700,color:color||C.text}}>{value}</span></div>);
 
   return(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-    <button onClick={onShowPDF} style={{background:C.accent,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>📄 Générer le rapport PDF</button>
+    <button onClick={onShowPDF} style={{background:C.accent,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>📄 Rapport hebdomadaire (PDF)</button>
+    <button onClick={onShowMonthly} style={{background:C.lavender,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>📅 Rapport mensuel</button>
     <Sec title="📈 Tendances (24h vs veille)">
       <div style={{display:"flex",gap:10}}>
         {[["🤱","Allaitement",trend("feed",e48a,e48b)],["💧","Pipi",trend("diaper_wet",e48a,e48b)],["💩","Caca",trend("diaper_poo",e48a,e48b)]].map(([emoji,label,t])=>(
@@ -705,6 +893,7 @@ function App(){
   const[modal,setModal]=useState(null);
   const[syncStatus,setSyncStatus]=useState("syncing");
   const[showPDF,setShowPDF]=useState(false);
+  const[showMonthly,setShowMonthly]=useState(false);
   const saveTimer=useRef(null);
 
   useEffect(()=>{
