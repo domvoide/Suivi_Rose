@@ -133,7 +133,7 @@ const iSt={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 12px",f
 const Inp=({label,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><input {...p} style={iSt}/></label>);
 const Sel=({label,children,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><select {...p} style={iSt}>{children}</select></label>);
 
-function FeedForm({onSave,initial}){
+function FeedForm({onSave,initial,simple}){
   const[side,setSide]=useState(initial?.side||"Gauche");
   const[dur,setDur]=useState(initial?.duration||"");
   const[qty,setQty]=useState(initial?.quantity||"");
@@ -142,8 +142,8 @@ function FeedForm({onSave,initial}){
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
     <Sel label="Sein" value={side} onChange={e=>setSide(e.target.value)}><option>Gauche</option><option>Droit</option><option>Les deux</option><option>Biberon</option></Sel>
     <Inp label="Durée (min)" type="number" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
-    <Inp label="Quantité ml (biberon)" type="number" min="0" value={qty} onChange={e=>setQty(e.target.value)} placeholder="optionnel"/>
-    <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>
+    {!simple&&<Inp label="Quantité ml (biberon)" type="number" min="0" value={qty} onChange={e=>setQty(e.target.value)} placeholder="optionnel"/>}
+    {!simple&&<Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     <Btn color={C.accent} onClick={()=>onSave({cat:"feed",side,duration:dur?+dur:null,quantity:qty?+qty:null,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
@@ -163,15 +163,16 @@ function PumpForm({onSave,initial}){
     <Btn color={C.accent} onClick={()=>onSave({cat:"pump",side,quantity:qty?+qty:null,duration:dur?+dur:null,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
-function DiaperForm({type,onSave,initial}){
+function DiaperForm({type,onSave,initial,simple}){
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   const[pc,setPc]=useState(initial?.pooColor||POO_COLORS[0]);
   const[pt,setPt]=useState(initial?.pooTex||POO_TEX[0]);
   const isPoo=type==="diaper_poo"||type==="diaper_both";
+  const details=isPoo&&(!simple||initial?.pooColor);
   return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    {isPoo&&<><Sel label="Couleur" value={pc} onChange={e=>setPc(e.target.value)}>{POO_COLORS.map(c=><option key={c}>{c}</option>)}</Sel><Sel label="Texture" value={pt} onChange={e=>setPt(e.target.value)}>{POO_TEX.map(t=><option key={t}>{t}</option>)}</Sel></>}
+    {isPoo&&!simple&&<><Sel label="Couleur" value={pc} onChange={e=>setPc(e.target.value)}>{POO_COLORS.map(c=><option key={c}>{c}</option>)}</Sel><Sel label="Texture" value={pt} onChange={e=>setPt(e.target.value)}>{POO_TEX.map(t=><option key={t}>{t}</option>)}</Sel></>}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={isPoo?C.golden:C.sky} onClick={()=>onSave({cat:type,pooColor:isPoo?pc:undefined,pooTex:isPoo?pt:undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
+    <Btn color={isPoo?C.golden:C.sky} onClick={()=>onSave({cat:type,pooColor:details?pc:undefined,pooTex:details?pt:undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </div>);
 }
 function SleepForm({onSave,initial}){
@@ -303,7 +304,7 @@ function MiniJournal({entries,cats,title,onClose,onEdit,onDelete}){
   </div>);
 }
 
-function TodayStats({entries,onEdit,onDelete}){
+function TodayStats({entries,onEdit,onDelete,simple}){
   const[,setTick]=useState(0);
   const[miniJournal,setMiniJournal]=useState(null);
   useEffect(()=>{
@@ -353,8 +354,8 @@ function TodayStats({entries,onEdit,onDelete}){
       <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight} cats={["feed"]}/>
       <SC emoji="💧" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight} cats={["diaper_wet","diaper_both"]}/>
       <SC emoji="💩" label="Caca" value={poo} sub={lastPoo?timeAgo(lastPoo.ts):null} color={C.golden} bg={C.goldenLight} cats={["diaper_poo","diaper_both"]}/>
-      <SC emoji="🌙" label="Nuit" value={nightMin?durLabel(nightMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
-      {lastW&&<SC emoji="⚖️" label="Poids" value={`${lastW.weight} kg`} color={C.sage} bg={C.sageLight} cats={["weight"]}/>}
+      {!simple&&<SC emoji="🌙" label="Nuit" value={nightMin?durLabel(nightMin):"—"} color={C.lavender} bg={C.lavenderLight}/>}
+      {!simple&&lastW&&<SC emoji="⚖️" label="Poids" value={`${lastW.weight} kg`} color={C.sage} bg={C.sageLight} cats={["weight"]}/>}
     </div>
     {miniJournal&&<MiniJournal entries={entries} cats={miniJournal.cats} title={miniJournal.title} onClose={()=>setMiniJournal(null)} onEdit={onEdit} onDelete={onDelete}/>}
   </div>);
@@ -894,6 +895,9 @@ function App(){
   const[syncStatus,setSyncStatus]=useState("syncing");
   const[showPDF,setShowPDF]=useState(false);
   const[showMonthly,setShowMonthly]=useState(false);
+  const[mode,setMode]=useState(()=>{try{return localStorage.getItem("bt_mode")||"complet";}catch{return"complet";}});
+  const simple=mode==="essentiel";
+  function changeMode(m){setMode(m);try{localStorage.setItem("bt_mode",m);}catch{}if(m==="essentiel"&&(tab==="stats"||tab==="weight"))setTab("home");}
   const saveTimer=useRef(null);
 
   useEffect(()=>{
@@ -947,6 +951,8 @@ function App(){
     "sleep","vitamin","probiotic","nombril",
     "nez","pump","weight","temperature","bath","note",
   ];
+  const QUICK_ESSENTIEL=["feed","diaper_wet","diaper_poo","diaper_both","sleep","vitamin","probiotic","nombril"];
+  const TABS=[["home","🏠","Accueil"],["journal","📋","Journal"],["stats","📊","Stats"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].filter(([t])=>!simple||t!=="stats"&&t!=="weight");
   const SIMPLE_CATS=["vitamin","bath","mood","note","nombril","nez","probiotic"];
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
@@ -959,27 +965,34 @@ function App(){
           <div style={{fontSize:20,fontWeight:800,color:C.accent}}>🌸 {data.babyName}</div>
           {ageLabel()&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>{ageLabel()}</div>}
         </div>
-        <span style={{fontSize:18}}>{syncDot}</span>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{display:"flex",background:C.bg,border:`1px solid ${C.border}`,borderRadius:999,padding:3}}>
+            {[["essentiel","Essentiel"],["complet","Complet"]].map(([m,label])=>(
+              <button key={m} onClick={()=>changeMode(m)} style={{background:mode===m?C.accent:"transparent",color:mode===m?"#fff":C.muted,border:"none",borderRadius:999,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer",transition:"background .2s"}}>{label}</button>
+            ))}
+          </div>
+          <span style={{fontSize:18}}>{syncDot}</span>
+        </div>
       </div>
     </div>
     <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px 100px"}}>
       {tab==="home"&&(<div style={{display:"flex",flexDirection:"column",gap:24}}>
-        <TodayStats entries={data.entries} onEdit={openEdit} onDelete={deleteEntry}/>
+        <TodayStats entries={data.entries} onEdit={openEdit} onDelete={deleteEntry} simple={simple}/>
         <div>
           <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Ajouter</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-            {QUICK.map(cat=>{const c=CATS[cat];return(
-              <button key={cat} onClick={()=>openModal(cat)} style={{background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"10px 4px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                <span style={{fontSize:22}}>{c.emoji}</span>
-                <span style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{c.label}</span>
+          <div style={{display:"grid",gridTemplateColumns:simple?"repeat(2,1fr)":"repeat(4,1fr)",gap:simple?10:8}}>
+            {(simple?QUICK_ESSENTIEL:QUICK).map(cat=>{const c=CATS[cat];return(
+              <button key={cat} onClick={()=>openModal(cat)} style={{background:simple?c.bg:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:simple?"16px 8px":"10px 4px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <span style={{fontSize:simple?30:22}}>{c.emoji}</span>
+                <span style={{fontSize:simple?14:10,color:simple?C.text:C.muted,fontWeight:simple?700:600,textAlign:"center",lineHeight:1.2}}>{c.label}</span>
               </button>
             );})}
           </div>
         </div>
         {sorted.length>0&&(<div>
           <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Récent</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>{sorted.slice(0,5).map(e=><EntryCard key={e.id} entry={e} onDelete={deleteEntry} onEdit={openEdit}/>)}</div>
-          {sorted.length>5&&<button onClick={()=>setTab("journal")} style={{background:"none",border:"none",color:C.accent,fontWeight:700,cursor:"pointer",marginTop:8,fontSize:14}}>Voir tout le journal →</button>}
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>{sorted.slice(0,simple?3:5).map(e=><EntryCard key={e.id} entry={e} onDelete={deleteEntry} onEdit={openEdit}/>)}</div>
+          {sorted.length>(simple?3:5)&&<button onClick={()=>setTab("journal")} style={{background:"none",border:"none",color:C.accent,fontWeight:700,cursor:"pointer",marginTop:8,fontSize:14}}>Voir tout le journal →</button>}
         </div>)}
       </div>)}
       {tab==="journal"&&<Journal entries={data.entries} onDelete={deleteEntry} onEdit={openEdit}/>}
@@ -988,7 +1001,7 @@ function App(){
       {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
     </div>
     <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0 20px",zIndex:50}}>
-      {[["home","🏠","Accueil"],["journal","📋","Journal"],["stats","📊","Stats"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].map(([t,emoji,label])=>(
+      {TABS.map(([t,emoji,label])=>(
         <button key={t} onClick={()=>setTab(t)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===t?C.accent:C.muted,fontWeight:tab===t?700:400,fontSize:11}}>
           <span style={{fontSize:22}}>{emoji}</span>{label}
         </button>
@@ -1001,9 +1014,9 @@ function App(){
             <div style={{fontSize:18,fontWeight:800}}>{isEditing?"✏️ Modifier":<>{CATS[mType]?.emoji} {CATS[mType]?.label}</>}</div>
             <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
           </div>
-          {mType==="feed"&&<FeedForm onSave={handleSave} initial={mEntry}/>}
+          {mType==="feed"&&<FeedForm onSave={handleSave} initial={mEntry} simple={simple}/>}
           {mType==="pump"&&<PumpForm onSave={handleSave} initial={mEntry}/>}
-          {(mType==="diaper_wet"||mType==="diaper_poo"||mType==="diaper_both")&&<DiaperForm type={mType} onSave={handleSave} initial={mEntry}/>}
+          {(mType==="diaper_wet"||mType==="diaper_poo"||mType==="diaper_both")&&<DiaperForm type={mType} onSave={handleSave} initial={mEntry} simple={simple}/>}
           {mType==="sleep"&&<SleepForm onSave={handleSave} initial={mEntry}/>}
           {mType==="weight"&&<WeightForm onSave={handleSave} initial={mEntry}/>}
           {mType==="temperature"&&<TempForm onSave={handleSave} initial={mEntry}/>}
