@@ -959,6 +959,7 @@ function App(){
 
   return(<div style={{background:C.bg,minHeight:"100vh",color:C.text}}>
     {showPDF&&<PDFReport data={data} onClose={()=>setShowPDF(false)}/>}
+    {showMonthly&&<MonthlyReport data={data} onClose={()=>setShowMonthly(false)}/>}
     <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"14px 20px 12px",position:"sticky",top:0,zIndex:40}}>
       <div style={{maxWidth:480,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
@@ -996,7 +997,7 @@ function App(){
         </div>)}
       </div>)}
       {tab==="journal"&&<Journal entries={data.entries} onDelete={deleteEntry} onEdit={openEdit}/>}
-      {tab==="stats"&&<StatsTab entries={data.entries} data={data} onShowPDF={()=>setShowPDF(true)}/>}
+      {tab==="stats"&&<StatsTab entries={data.entries} data={data} onShowPDF={()=>setShowPDF(true)} onShowMonthly={()=>setShowMonthly(true)}/>}
       {tab==="weight"&&<WeightChart entries={data.entries}/>}
       {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
     </div>
