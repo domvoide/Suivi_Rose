@@ -187,6 +187,16 @@ const ICON_PATHS={
   settings:'<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
 };
 const Icon=({name,size=22,stroke=2,style})=>(<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,display:"block",...style}} dangerouslySetInnerHTML={{__html:ICON_PATHS[name]||""}}/>);
+// Logo : rose au trait
+const RoseLogo=({size=34,color="#fff",stroke=2.6})=>(<svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={{display:"block"}}>
+  <path d="M13.5 15.5c0 7 4.5 11.5 10.5 11.5s10.5-4.5 10.5-11.5"/>
+  <path d="M13.5 15.5c2.5-2.2 6-2.4 8.5 0M34.5 15.5c-2.5-2.2-6-2.4-8.5 0"/>
+  <path d="M17 12c1.2-4.2 12.8-4.2 14 0"/>
+  <path d="M24 22.5c-3.6 0-5.2-3.4-3.4-6.4 1.6-2.6 6.2-2.4 6.6.6.3 1.9-1.2 3.1-2.8 2.6"/>
+  <path d="M24 27v16"/>
+  <path d="M24 37.5c-4.4-.2-7.6-2.8-8.6-6.5 4.4.1 7.6 2.5 8.6 6.5z"/>
+  <path d="M24 33c3.8-.2 6.6-2.4 7.5-5.6-3.8.1-6.6 2.2-7.5 5.6z"/>
+</svg>);
 // Icône dans une pastille colorée
 const IconChip=({name,color,bg,size=42,radius=14,icon})=>(<div style={{width:size,height:size,borderRadius:radius,background:bg,color,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Icon name={name} size={icon||Math.round(size*.5)}/></div>);
 const CatChip=({cat,name,...p})=>{const c=CATS[cat]||CATS.note;return<IconChip name={name||c.icon} color={c.color} bg={c.bg} {...p}/>;};
@@ -1161,7 +1171,7 @@ function App(){
     <div style={{background:"var(--glass)",backdropFilter:"saturate(1.6) blur(16px)",WebkitBackdropFilter:"saturate(1.6) blur(16px)",borderBottom:"1px solid var(--hairline)",padding:"calc(12px + env(safe-area-inset-top)) 16px 12px",position:"sticky",top:0,zIndex:40}}>
       <div style={{maxWidth:480,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
         <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-          <div style={{width:44,height:44,borderRadius:16,background:"var(--avatar)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,fontWeight:800,color:"#fff",flexShrink:0,boxShadow:"0 8px 18px -8px rgba(228,85,127,.8)"}}>{(data.babyName||"?").charAt(0).toUpperCase()}</div>
+          <div style={{width:44,height:44,borderRadius:16,background:"var(--avatar)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 8px 18px -8px rgba(228,85,127,.8)"}}><RoseLogo size={36}/></div>
           <div style={{minWidth:0}}>
             <div style={{fontSize:22,fontWeight:800,letterSpacing:-.6,lineHeight:1.1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{data.babyName}</div>
             <div style={{fontSize:12,color:C.muted,fontWeight:700,display:"flex",alignItems:"center",gap:6,marginTop:2}}>
