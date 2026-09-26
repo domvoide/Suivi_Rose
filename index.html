@@ -2,20 +2,41 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Suivi Rose"/>
+<meta name="theme-color" content="#FBF7F4"/>
 <title>Suivi Rose 🌸</title>
 <link rel="apple-touch-icon" href="https://domvoide.github.io/Suivi_Rose/icon.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{background:#FBF7F4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2D2118;}
+html,body{background:#FBF7F4;}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2D2118;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none;}
 input,select,textarea{font-family:inherit;-webkit-appearance:none;}
 button{font-family:inherit;}
+input:focus,select:focus,textarea:focus{border-color:#C97A5A!important;box-shadow:0 0 0 4px rgba(201,122,90,.14);}
+.tap{transition:transform .14s ease,background-color .2s,color .2s,border-color .2s,box-shadow .2s;}
+.tap:active{transform:scale(.95);}
+.row{transition:background-color .15s;}
+.row:active{background:#FBF4EF;}
+.page{animation:fadeUp .3s cubic-bezier(.2,.8,.3,1) both;}
+.stagger>*{animation:fadeUp .4s cubic-bezier(.2,.8,.3,1) both;}
+.stagger>*:nth-child(2){animation-delay:.04s}.stagger>*:nth-child(3){animation-delay:.08s}.stagger>*:nth-child(4){animation-delay:.12s}.stagger>*:nth-child(5){animation-delay:.16s}.stagger>*:nth-child(n+6){animation-delay:.2s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@keyframes sheetIn{from{transform:translateY(100%)}}
+@keyframes sheetOut{to{transform:translateY(100%)}}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,12px) scale(.96)}10%,85%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,6px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
 <body>
@@ -35,7 +56,9 @@ function localHoursBefore(h){const d=new Date(Date.now()-h*3600000);return`${d.g
 function isoToLocal(iso){const d=new Date(iso);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;}
 function localToIso(s){return new Date(s).toISOString();}
 
-const C={bg:"#FBF7F4",surface:"#FFFFFF",accent:"#C97A5A",accentLight:"#F0D9CC",sage:"#7A9E87",sageLight:"#D6EAD9",lavender:"#9B8EC4",lavenderLight:"#E5E1F5",sky:"#5A8EC9",skyLight:"#D6E6F5",golden:"#C9A05A",goldenLight:"#F5EBD6",red:"#C95A5A",redLight:"#FFD9D9",text:"#2D2118",muted:"#7A6A5A",border:"#E8DDD4",teal:"#5A9E9B",tealLight:"#D6ECEA"};
+const C={bg:"#FBF7F4",surface:"#FFFFFF",accent:"#C97A5A",accentLight:"#F0D9CC",sage:"#7A9E87",sageLight:"#D6EAD9",lavender:"#9B8EC4",lavenderLight:"#E5E1F5",sky:"#5A8EC9",skyLight:"#D6E6F5",golden:"#C9A05A",goldenLight:"#F5EBD6",red:"#C95A5A",redLight:"#FFD9D9",text:"#2D2118",muted:"#7A6A5A",border:"#E8DDD4",teal:"#5A9E9B",tealLight:"#D6ECEA",
+  shadow:"0 1px 2px rgba(45,33,24,.04),0 6px 20px -6px rgba(45,33,24,.10)",
+  shadowLg:"0 2px 4px rgba(45,33,24,.05),0 14px 34px -10px rgba(45,33,24,.18)"};
 
 const CATS={
   feed:       {label:"Allaitement", emoji:"🤱",color:C.accent,  bg:C.accentLight},
@@ -128,25 +151,90 @@ function calcNightDuration(allEntries){
   return longestPause(ws1,we1);
 }
 
-const Btn=({color,children,onClick,style={}})=>(<button onClick={onClick} style={{background:color,color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontWeight:700,fontSize:15,cursor:"pointer",...style}}>{children}</button>);
-const iSt={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 12px",fontSize:15,background:C.bg,color:C.text,outline:"none",width:"100%",boxSizing:"border-box"};
-const Inp=({label,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><input {...p} style={iSt}/></label>);
-const Sel=({label,children,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span><select {...p} style={iSt}>{children}</select></label>);
+// Icônes au trait (menu du bas)
+const ICONS={
+  home:<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>,
+  journal:<><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></>,
+  stats:<path d="M3 20h18M7 16v-5M12 16V6M17 16v-8"/>,
+  weight:<><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></>,
+  settings:<><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></>,
+};
+const Icon=({name,size=22})=>(<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{ICONS[name]}</svg>);
 
-function FeedForm({onSave,initial}){
-  const[side,setSide]=useState(initial?.side||"Gauche");
+// ─── Éléments d'interface ────────────────────────────────────────────────────
+const Btn=({color,children,onClick,style={},ghost})=>(<button className="tap" onClick={onClick} style={{background:ghost?C.surface:color,color:ghost?C.muted:"#fff",border:ghost?`1.5px solid ${C.border}`:"none",borderRadius:16,padding:"15px 22px",fontWeight:800,fontSize:16,cursor:"pointer",boxShadow:ghost?"none":`0 8px 18px -8px ${color}`,...style}}>{children}</button>);
+const SmallBtn=({color,children,onClick,ghost})=>(<button className="tap" onClick={onClick} style={{background:ghost?"transparent":color,color:ghost?C.muted:"#fff",border:ghost?`1.5px solid ${C.border}`:"none",borderRadius:12,padding:"8px 14px",fontWeight:800,fontSize:13,cursor:"pointer"}}>{children}</button>);
+const Label=({children})=>(<span style={{fontSize:13,fontWeight:800,color:C.muted}}>{children}</span>);
+const iSt={border:`1.5px solid ${C.border}`,borderRadius:14,padding:"12px 14px",fontSize:16,background:C.bg,color:C.text,outline:"none",width:"100%",boxSizing:"border-box",transition:"border-color .2s, box-shadow .2s"};
+const Inp=({label,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:7}}><Label>{label}</Label><input {...p} style={iSt}/></label>);
+const Sel=({label,children,...p})=>(<label style={{display:"flex",flexDirection:"column",gap:7}}><Label>{label}</Label><select {...p} style={iSt}>{children}</select></label>);
+const Form=({children})=>(<div style={{display:"flex",flexDirection:"column",gap:18}}>{children}</div>);
+const Title=({children,action})=>(<div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",margin:"0 4px 10px"}}><div style={{fontSize:18,fontWeight:900,letterSpacing:-.2}}>{children}</div>{action}</div>);
+const Card=({children,style={},onClick,className})=>(<div onClick={onClick} className={className} style={{background:C.surface,borderRadius:22,boxShadow:C.shadow,...style}}>{children}</div>);
+
+// Choix sous forme de pastilles (remplace les listes déroulantes)
+function Chips({label,options,value,onChange,color=C.accent}){
+  return(<div style={{display:"flex",flexDirection:"column",gap:8}}>
+    {label&&<Label>{label}</Label>}
+    <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+      {options.map(o=>{const v=typeof o==="string"?o:o.value,l=typeof o==="string"?o:o.label,on=value===v;return(
+        <button key={v} className="tap" onClick={()=>onChange(v)} style={{flex:"1 1 auto",minWidth:64,padding:"11px 12px",borderRadius:14,border:`1.5px solid ${on?color:C.border}`,background:on?color:C.surface,color:on?"#fff":C.text,fontWeight:800,fontSize:14,cursor:"pointer",boxShadow:on?`0 6px 14px -8px ${color}`:"none"}}>{l}</button>
+      );})}
+    </div>
+  </div>);
+}
+// Raccourcis de valeurs (ex : 5 / 10 / 15 min)
+function QuickPicks({values,suffix,onPick,current}){
+  return(<div style={{display:"flex",gap:6,marginTop:-8}}>
+    {values.map(v=>(<button key={v} className="tap" onClick={()=>onPick(String(v))} style={{flex:1,padding:"7px 0",borderRadius:10,border:"none",background:String(current)===String(v)?C.accentLight:C.bg,color:String(current)===String(v)?C.accent:C.muted,fontWeight:800,fontSize:12,cursor:"pointer"}}>{v}{suffix}</button>))}
+  </div>);
+}
+
+// Feuille qui glisse depuis le bas (formulaires, détails)
+let scrollLocks=0;
+function lockScroll(){if(scrollLocks++===0)document.body.style.overflow="hidden";return()=>{if(--scrollLocks===0)document.body.style.overflow="";};}
+function Sheet({title,onClose,children}){
+  const[closing,setClosing]=useState(false);
+  const[dy,setDy]=useState(0);
+  const startY=useRef(null);
+  useEffect(lockScroll,[]);
+  function close(){if(closing)return;setClosing(true);setTimeout(onClose,200);}
+  const drag={
+    onTouchStart:e=>{startY.current=e.touches[0].clientY;},
+    onTouchMove:e=>{if(startY.current!=null)setDy(Math.max(0,e.touches[0].clientY-startY.current));},
+    onTouchEnd:()=>{startY.current=null;if(dy>90)close();else setDy(0);},
+  };
+  return ReactDOM.createPortal(
+    <div onClick={e=>{if(e.target===e.currentTarget)close();}} style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.38)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200,animation:`${closing?"fadeOut .2s ease forwards":"fadeIn .2s ease"}`}}>
+      <div style={{background:C.surface,borderRadius:"28px 28px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 -12px 40px rgba(45,33,24,.16)",transform:dy?`translateY(${dy}px)`:undefined,transition:dy&&startY.current!=null?"none":"transform .25s ease",animation:closing?"sheetOut .2s ease-in forwards":"sheetIn .34s cubic-bezier(.2,.9,.3,1) backwards"}}>
+        <div {...drag} style={{padding:"10px 20px 0",touchAction:"none"}}>
+          <div style={{width:42,height:5,borderRadius:3,background:C.border,margin:"0 auto 14px"}}/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+            <div style={{fontSize:20,fontWeight:900,letterSpacing:-.2}}>{title}</div>
+            <button className="tap" onClick={close} aria-label="Fermer" style={{width:36,height:36,borderRadius:18,border:"none",background:C.bg,color:C.muted,fontSize:22,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          </div>
+        </div>
+        <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"0 20px calc(28px + env(safe-area-inset-bottom))"}}>{children}</div>
+      </div>
+    </div>,document.body);
+}
+
+// ─── Formulaires ─────────────────────────────────────────────────────────────
+function FeedForm({onSave,initial,simple,preset}){
+  const[side,setSide]=useState(initial?.side||preset?.side||"Gauche");
   const[dur,setDur]=useState(initial?.duration||"");
   const[qty,setQty]=useState(initial?.quantity||"");
   const[note,setNote]=useState(initial?.note||"");
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    <Sel label="Sein" value={side} onChange={e=>setSide(e.target.value)}><option>Gauche</option><option>Droit</option><option>Les deux</option><option>Biberon</option></Sel>
-    <Inp label="Durée (min)" type="number" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
-    <Inp label="Quantité ml (biberon)" type="number" min="0" value={qty} onChange={e=>setQty(e.target.value)} placeholder="optionnel"/>
-    <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>
+  return(<Form>
+    <Chips label="Sein" options={["Gauche","Droit","Les deux","Biberon"]} value={side} onChange={setSide}/>
+    <Inp label="Durée (min)" type="number" inputMode="numeric" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
+    <QuickPicks values={[5,10,15,20,30]} suffix=" min" current={dur} onPick={setDur}/>
+    {(side==="Biberon"||qty)&&<Inp label="Quantité (ml)" type="number" inputMode="numeric" min="0" value={qty} onChange={e=>setQty(e.target.value)} placeholder="ex: 90"/>}
+    {!simple&&<Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     <Btn color={C.accent} onClick={()=>onSave({cat:"feed",side,duration:dur?+dur:null,quantity:qty?+qty:null,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
-  </div>);
+  </Form>);
 }
 function PumpForm({onSave,initial}){
   const[side,setSide]=useState(initial?.side||"Les deux");
@@ -154,73 +242,80 @@ function PumpForm({onSave,initial}){
   const[dur,setDur]=useState(initial?.duration||"");
   const[note,setNote]=useState(initial?.note||"");
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    <Sel label="Sein" value={side} onChange={e=>setSide(e.target.value)}><option>Les deux</option><option>Gauche</option><option>Droit</option></Sel>
-    <Inp label="Quantité (ml)" type="number" min="0" step="5" value={qty} onChange={e=>setQty(e.target.value)} placeholder="ex: 60"/>
-    <Inp label="Durée (min)" type="number" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
+  return(<Form>
+    <Chips label="Sein" options={["Les deux","Gauche","Droit"]} value={side} onChange={setSide}/>
+    <Inp label="Quantité (ml)" type="number" inputMode="numeric" min="0" step="5" value={qty} onChange={e=>setQty(e.target.value)} placeholder="ex: 60"/>
+    <Inp label="Durée (min)" type="number" inputMode="numeric" min="0" value={dur} onChange={e=>setDur(e.target.value)} placeholder="ex: 15"/>
+    <QuickPicks values={[10,15,20,30]} suffix=" min" current={dur} onPick={setDur}/>
     <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel"/>
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     <Btn color={C.accent} onClick={()=>onSave({cat:"pump",side,quantity:qty?+qty:null,duration:dur?+dur:null,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
-  </div>);
+  </Form>);
 }
-function DiaperForm({type,onSave,initial}){
+function DiaperForm({type,onSave,initial,simple}){
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   const[pc,setPc]=useState(initial?.pooColor||POO_COLORS[0]);
   const[pt,setPt]=useState(initial?.pooTex||POO_TEX[0]);
   const isPoo=type==="diaper_poo"||type==="diaper_both";
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    {isPoo&&<><Sel label="Couleur" value={pc} onChange={e=>setPc(e.target.value)}>{POO_COLORS.map(c=><option key={c}>{c}</option>)}</Sel><Sel label="Texture" value={pt} onChange={e=>setPt(e.target.value)}>{POO_TEX.map(t=><option key={t}>{t}</option>)}</Sel></>}
+  const details=isPoo&&(!simple||initial?.pooColor);
+  return(<Form>
+    {isPoo&&!simple&&<>
+      <Chips label="Couleur" options={POO_COLORS} value={pc} onChange={setPc} color={C.golden}/>
+      <Chips label="Texture" options={POO_TEX} value={pt} onChange={setPt} color={C.golden}/>
+    </>}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Btn color={isPoo?C.golden:C.sky} onClick={()=>onSave({cat:type,pooColor:isPoo?pc:undefined,pooTex:isPoo?pt:undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
-  </div>);
+    <Btn color={isPoo?C.golden:C.sky} onClick={()=>onSave({cat:type,pooColor:details?pc:undefined,pooTex:details?pt:undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
+  </Form>);
 }
 function SleepForm({onSave,initial}){
   const[start,setStart]=useState(initial?isoToLocal(initial.ts):localHoursBefore(1));
-  const[end,setEnd]=useState(localNow());
+  const[end,setEnd]=useState(()=>initial?.duration?isoToLocal(new Date(new Date(initial.ts).getTime()+initial.duration*60000).toISOString()):localNow());
   const dur=Math.max(0,Math.round((new Date(end)-new Date(start))/60000));
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
+  return(<Form>
     <Inp label="Début" type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/>
     <Inp label="Fin" type="datetime-local" value={end} onChange={e=>setEnd(e.target.value)}/>
-    {dur>0&&<div style={{fontSize:13,color:C.lavender,fontWeight:600}}>Durée : {durLabel(dur)}</div>}
+    {dur>0&&<div style={{background:C.lavenderLight,color:C.lavender,borderRadius:14,padding:"12px 14px",fontWeight:800,fontSize:15,textAlign:"center"}}>😴 {durLabel(dur)} de sommeil</div>}
     <Btn color={C.lavender} onClick={()=>onSave({cat:"sleep",duration:dur,ts:localToIso(start)})}>{initial?"Modifier":"Enregistrer"}</Btn>
-  </div>);
+  </Form>);
 }
 function WeightForm({onSave,initial}){
   const[w,setW]=useState(initial?.weight||"");
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    <Inp label="Poids (kg)" type="number" step="0.001" min="0" value={w} onChange={e=>setW(e.target.value)} placeholder="ex: 3.400"/>
-    <Inp label="Date/heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
+  return(<Form>
+    <Inp label="Poids (kg)" type="number" inputMode="decimal" step="0.001" min="0" value={w} onChange={e=>setW(e.target.value)} placeholder="ex: 3.400"/>
+    <Inp label="Date / heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
     <Btn color={C.sage} onClick={()=>w&&onSave({cat:"weight",weight:+w,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
-  </div>);
+  </Form>);
 }
 function TempForm({onSave,initial}){
   const[t,setT]=useState(initial?.temp||"");
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    <Inp label="Température (°C)" type="number" step="0.1" min="35" max="42" value={t} onChange={e=>setT(e.target.value)} placeholder="ex: 37.2"/>
+  return(<Form>
+    <Inp label="Température (°C)" type="number" inputMode="decimal" step="0.1" min="35" max="42" value={t} onChange={e=>setT(e.target.value)} placeholder="ex: 37.2"/>
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    {t&&+t>38&&<div style={{background:C.redLight,borderRadius:10,padding:"8px 12px",fontSize:13,color:C.red,fontWeight:600}}>⚠️ Fièvre — consultez votre pédiatre</div>}
+    {t&&+t>38&&<div style={{background:C.redLight,borderRadius:14,padding:"12px 14px",fontSize:14,color:C.red,fontWeight:800}}>⚠️ Fièvre — consultez votre pédiatre</div>}
     <Btn color={C.red} onClick={()=>t&&onSave({cat:"temperature",temp:+t,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
-  </div>);
+  </Form>);
 }
 function SimpleForm({cat,color,onSave,initial}){
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   const[note,setNote]=useState(initial?.note||"");
   const[mood,setMood]=useState(initial?.mood||MOODS[0]);
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    {cat==="mood"&&<div><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Humeur</div><div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{MOODS.map(m=><button key={m} onClick={()=>setMood(m)} style={{fontSize:28,background:mood===m?C.sageLight:"none",border:`2px solid ${mood===m?C.sage:C.border}`,borderRadius:12,padding:"4px 8px",cursor:"pointer"}}>{m}</button>)}</div></div>}
+  return(<Form>
+    {cat==="mood"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><Label>Humeur</Label><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{MOODS.map(m=><button key={m} className="tap" onClick={()=>setMood(m)} style={{fontSize:28,background:mood===m?C.sageLight:C.bg,border:`2px solid ${mood===m?C.sage:"transparent"}`,borderRadius:16,padding:"6px 10px",cursor:"pointer"}}>{m}</button>)}</div></div>}
     <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
-    <Inp label="Note (optionnel)" value={note} onChange={e=>setNote(e.target.value)} placeholder="..."/>
+    <Inp label="Note (optionnel)" value={note} onChange={e=>setNote(e.target.value)} placeholder="…"/>
     <Btn color={color} onClick={()=>onSave({cat,mood:cat==="mood"?mood:undefined,note:note||undefined,vitaminDone:cat==="vitamin"?true:undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
-  </div>);
+  </Form>);
 }
 
-function EntryCard({entry,onDelete,onEdit}){
-  const cat=CATS[entry.cat]||CATS.note;
-  const[confirm,setConfirm]=useState(false);
+// Taille d'emoji réduite pour les doubles (ex : 💧💩)
+const eSize=(e,base)=>e.length>3?Math.round(base*.6):base;
+
+// ─── Entrées ─────────────────────────────────────────────────────────────────
+function entryParts(entry){
   const parts=[];
-  if(entry.side)parts.push(entry.side==="Les deux"?"Les deux seins":`Sein ${entry.side}`);
+  if(entry.side)parts.push(entry.side==="Les deux"?"Les deux seins":entry.side==="Biberon"?"Biberon":`Sein ${entry.side.toLowerCase()}`);
   if(entry.duration)parts.push(durLabel(entry.duration));
   if(entry.quantity)parts.push(`${entry.quantity} ml`);
   if(entry.weight)parts.push(`${entry.weight} kg`);
@@ -228,88 +323,78 @@ function EntryCard({entry,onDelete,onEdit}){
   if(entry.pooColor)parts.push(entry.pooColor);
   if(entry.pooTex)parts.push(entry.pooTex);
   if(entry.mood)parts.push(entry.mood);
-  if(entry.vitaminDone)parts.push("✓");
   if(entry.note)parts.push(entry.note);
   if(entry.author)parts.push(`— ${entry.author}`);
-  return(<div style={{background:C.surface,borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 16px",display:"flex",alignItems:"flex-start",gap:12,position:"relative"}}>
-    <div style={{width:40,height:40,borderRadius:12,background:cat.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{cat.emoji}</div>
-    <div style={{flex:1,minWidth:0}}>
-      <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-        <span style={{fontWeight:700,fontSize:14}}>{cat.label}</span>
-        <span style={{fontSize:12,color:C.muted}}>{fmtTime(entry.ts)}</span>
+  return parts;
+}
+function EntryRow({entry,onDelete,onEdit,last}){
+  const cat=CATS[entry.cat]||CATS.note;
+  const[confirm,setConfirm]=useState(false);
+  const parts=entryParts(entry);
+  return(<div style={{position:"relative"}}>
+    <div className="row" onClick={()=>onEdit(entry)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 12px 12px 14px",cursor:"pointer",borderBottom:last?"none":`1px solid ${C.bg}`}}>
+      <div style={{width:42,height:42,borderRadius:14,background:cat.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:eSize(cat.emoji,20),whiteSpace:"nowrap",flexShrink:0}}>{cat.emoji}</div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontWeight:800,fontSize:15}}>{cat.label}</div>
+        {parts.length>0&&<div style={{fontSize:13,color:C.muted,marginTop:1,lineHeight:1.35}}>{parts.join(" · ")}</div>}
       </div>
-      {parts.length>0&&<div style={{fontSize:13,color:C.muted,marginTop:3}}>{parts.join(" · ")}</div>}
+      <div style={{fontSize:14,fontWeight:800,color:C.muted,fontVariantNumeric:"tabular-nums",flexShrink:0}}>{fmtTime(entry.ts)}</div>
+      <button className="tap" aria-label="Supprimer" onClick={e=>{e.stopPropagation();setConfirm(true);}} style={{width:30,height:30,borderRadius:15,border:"none",background:"transparent",color:"#B8A99B",fontSize:20,lineHeight:1,cursor:"pointer",flexShrink:0}}>×</button>
     </div>
-    <div style={{display:"flex",gap:4,flexShrink:0}}>
-      <button onClick={()=>onEdit(entry)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:16,padding:"0 3px"}}>✏️</button>
-      <button onClick={()=>setConfirm(true)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:20,padding:"0 2px"}}>×</button>
-    </div>
-    {confirm&&<div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
-      <span style={{fontSize:13}}>Supprimer ?</span>
-      <Btn color={C.accent} onClick={()=>onDelete(entry.id)}>Oui</Btn>
-      <Btn color={C.muted} onClick={()=>setConfirm(false)}>Non</Btn>
+    {confirm&&<div style={{position:"absolute",inset:0,background:"rgba(255,255,255,.97)",display:"flex",alignItems:"center",gap:8,padding:"0 14px",animation:"fadeIn .15s ease",zIndex:2}}>
+      <span style={{flex:1,fontSize:14,fontWeight:800}}>Supprimer ?</span>
+      <SmallBtn color={C.red} onClick={()=>onDelete(entry.id)}>Supprimer</SmallBtn>
+      <SmallBtn ghost onClick={()=>setConfirm(false)}>Annuler</SmallBtn>
     </div>}
   </div>);
 }
+function EntryList({entries,onDelete,onEdit}){
+  return(<Card style={{overflow:"hidden"}}>{entries.map((e,i)=><EntryRow key={e.id} entry={e} onDelete={onDelete} onEdit={onEdit} last={i===entries.length-1}/>)}</Card>);
+}
+function DayGroups({entries,onDelete,onEdit}){
+  const groups=groupByDay(entries);
+  return(<div style={{display:"flex",flexDirection:"column",gap:22}}>
+    {Object.entries(groups).map(([day,es])=>(
+      <div key={day}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"0 6px 8px"}}>
+          <span style={{fontSize:15,fontWeight:900,textTransform:"capitalize"}}>{fmtDate(es[0].ts)}</span>
+          <span style={{fontSize:12,fontWeight:700,color:C.muted}}>{es.length} entrée{es.length>1?"s":""}</span>
+        </div>
+        <EntryList entries={es} onDelete={onDelete} onEdit={onEdit}/>
+      </div>
+    ))}
+  </div>);
+}
+const Empty=({children})=>(<div style={{textAlign:"center",color:C.muted,padding:"48px 0",fontWeight:700}}><div style={{fontSize:40,marginBottom:8}}>👶</div>{children}</div>);
 
 function MiniJournal({entries,cats,title,onClose,onEdit,onDelete}){
-  const filtered=[...entries].filter(e=>cats.includes(e.cat)).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
-  const groups=groupByDay(filtered);
-  const[confirm,setConfirm]=useState(null);
-  return(<div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-    <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 16px 40px",width:"100%",maxWidth:480,height:"75vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-        <div style={{fontSize:17,fontWeight:800}}>{title}</div>
-        <button onClick={onClose} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
-      </div>
-      {!filtered.length&&<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.</div>}
-      <div style={{display:"flex",flexDirection:"column",gap:18}}>
-        {Object.entries(groups).map(([day,es])=>(
-          <div key={day}>
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:6}}>{fmtDate(es[0].ts)}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {es.map(e=>{
-                const cat=CATS[e.cat]||CATS.note;
-                const parts=[];
-                if(e.side)parts.push(e.side==="Les deux"?"Les deux seins":`Sein ${e.side}`);
-                if(e.duration)parts.push(durLabel(e.duration));
-                if(e.quantity)parts.push(`${e.quantity} ml`);
-                if(e.weight)parts.push(`${e.weight} kg`);
-                if(e.pooColor)parts.push(e.pooColor);
-                if(e.pooTex)parts.push(e.pooTex);
-                if(e.note)parts.push(e.note);
-                return(<div key={e.id} style={{position:"relative"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:cat.bg,borderRadius:10}}>
-                    <span style={{fontSize:18,flexShrink:0}}>{cat.emoji}</span>
-                    <span style={{fontSize:13,fontWeight:700,flexShrink:0}}>{fmtTime(e.ts)}</span>
-                    {parts.length>0&&<span style={{fontSize:12,color:C.muted,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{parts.join(" · ")}</span>}
-                    <div style={{display:"flex",gap:4,flexShrink:0}}>
-                      <button onClick={()=>{onEdit(e);onClose();}} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:15,padding:"0 3px"}}>✏️</button>
-                      <button onClick={()=>setConfirm(e.id)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:18,padding:"0 2px"}}>×</button>
-                    </div>
-                  </div>
-                  {confirm===e.id&&<div style={{position:"absolute",inset:0,background:"rgba(253,247,244,0.97)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",gap:10,zIndex:10}}>
-                    <span style={{fontSize:13}}>Supprimer ?</span>
-                    <button onClick={()=>{onDelete(e.id);setConfirm(null);}} style={{background:C.accent,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>Oui</button>
-                    <button onClick={()=>setConfirm(null)} style={{background:C.muted,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>Non</button>
-                  </div>}
-                </div>);
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+  const filtered=entries.filter(e=>cats.includes(e.cat));
+  return(<Sheet title={title} onClose={onClose}>
+    {!filtered.length?<Empty>Aucune entrée.</Empty>:<DayGroups entries={filtered} onDelete={onDelete} onEdit={e=>{onEdit(e);onClose();}}/>}
+  </Sheet>);
+}
+
+// ─── Accueil ─────────────────────────────────────────────────────────────────
+function StatTile({emoji,label,value,sub,color,bg,onClick}){
+  return(<div onClick={onClick} className={onClick?"tap":undefined} style={{background:bg,borderRadius:20,padding:"14px 14px 12px",cursor:onClick?"pointer":"default",minWidth:0}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <span style={{fontSize:20}}>{emoji}</span>
+      {onClick&&<span style={{fontSize:14,color,opacity:.5,fontWeight:900}}>›</span>}
     </div>
+    <div style={{fontSize:26,fontWeight:900,color,marginTop:4,letterSpacing:-.5,whiteSpace:"nowrap"}}>{value}</div>
+    <div style={{fontSize:12,color:C.text,fontWeight:800,opacity:.75}}>{label}</div>
+    {sub&&<div style={{fontSize:11,color:C.muted,marginTop:2,fontWeight:600}}>{sub}</div>}
   </div>);
 }
 
-function TodayStats({entries,onEdit,onDelete}){
+function TodayStats({entries,onEdit,onDelete,onAdd,simple}){
   const[,setTick]=useState(0);
   const[miniJournal,setMiniJournal]=useState(null);
   useEffect(()=>{
     function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
     document.addEventListener("visibilitychange",onVisible);
-    return()=>document.removeEventListener("visibilitychange",onVisible);
+    const id=setInterval(()=>setTick(t=>t+1),60*1000);
+    return()=>{document.removeEventListener("visibilitychange",onVisible);clearInterval(id);};
   },[]);
   const now=new Date();
   const since=new Date(now.getTime()-24*3600000);
@@ -317,68 +402,66 @@ function TodayStats({entries,onEdit,onDelete}){
   const feedSessions=groupFeeds(te);
   const wet=te.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").length;
   const poo=te.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").length;
-  const lastFeed=entries.filter(e=>e.cat==="feed").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
-  const lastWet=entries.filter(e=>e.cat==="diaper_wet"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
-  const lastPoo=entries.filter(e=>e.cat==="diaper_poo"||e.cat==="diaper_both").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
-  const lastW=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+  const latest=cats=>entries.filter(e=>cats.includes(e.cat)).sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+  const lastFeed=latest(["feed"]);
+  const lastWet=latest(["diaper_wet","diaper_both"]);
+  const lastPoo=latest(["diaper_poo","diaper_both"]);
+  const lastW=latest(["weight"]);
   const nightMin=calcNightDuration(entries);
-  const{vitDone,nombrilDone,probioticDone}=checkMorningSoins(entries);
-  const heure=now.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"});
-  const SC=({emoji,label,value,sub,color,bg,cats})=>(
-    <div onClick={cats?()=>setMiniJournal({cats,title:`${emoji} ${label}`}):undefined}
-      style={{background:bg||C.surface,borderRadius:16,padding:"12px 14px",flex:"1 1 90px",minWidth:85,border:`1px solid ${C.border}`,cursor:cats?"pointer":"default"}}>
-      <div style={{fontSize:18}}>{emoji}</div>
-      <div style={{fontSize:20,fontWeight:700,color:color||C.text}}>{value}</div>
-      <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{label}</div>
-      {sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}
+  const{vitDone}=checkMorningSoins(entries);
+  const open=(cats,title)=>()=>setMiniJournal({cats,title});
+  return(<div className="stagger" style={{display:"flex",flexDirection:"column",gap:14}}>
+    {/* Dernière tétée */}
+    <div style={{background:"linear-gradient(135deg,#DE9272 0%,#C97A5A 55%,#B8694B 100%)",borderRadius:26,padding:"18px 18px 18px 20px",color:"#fff",boxShadow:"0 16px 32px -14px rgba(201,122,90,.75)",display:"flex",alignItems:"center",gap:14,position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",right:-30,top:-40,width:140,height:140,borderRadius:"50%",background:"rgba(255,255,255,.10)"}}/>
+      <div style={{flex:1,minWidth:0,position:"relative"}} onClick={open(["feed"],"🤱 Allaitements")}>
+        <div style={{fontSize:13,fontWeight:800,opacity:.85}}>🤱 Dernière tétée</div>
+        <div style={{fontSize:30,fontWeight:900,letterSpacing:-.6,marginTop:2}}>{lastFeed?timeAgo(lastFeed.ts):"—"}</div>
+        <div style={{fontSize:13,fontWeight:700,opacity:.9,marginTop:2}}>{lastFeed?[fmtTime(lastFeed.ts),...entryParts({side:lastFeed.side,duration:lastFeed.duration,quantity:lastFeed.quantity})].join(" · "):"Aucune tétée enregistrée"}</div>
+      </div>
+      <button className="tap" onClick={()=>onAdd("feed")} aria-label="Ajouter un allaitement" style={{position:"relative",width:54,height:54,borderRadius:27,border:"none",background:"rgba(255,255,255,.95)",color:C.accent,fontSize:30,fontWeight:700,lineHeight:1,cursor:"pointer",boxShadow:"0 6px 16px rgba(0,0,0,.12)",flexShrink:0}}>+</button>
     </div>
-  );
-  return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
-    <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between"}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>Dernières 24h</div>
-      <div style={{fontSize:13,fontWeight:600,color:C.accent}}>🕐 {heure}</div>
-    </div>
-    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-      {[
-        {done:vitDone,   emoji:"💊",label:"Vitamines"},
-        {done:probioticDone,emoji:"🦠",label:"Probiotic"},
-        {done:nombrilDone,emoji:"🌀",label:"Nombril"},
-      ].map(({done,emoji,label})=>(
-        <div key={label} style={{flex:1,minWidth:90,background:done?C.sageLight:C.redLight,borderRadius:12,padding:"7px 10px",fontSize:11,fontWeight:700,color:done?C.sage:C.red,textAlign:"center"}}>
-          {emoji} {label} {done?"✓":"⚠️"}
-        </div>
-      ))}
-    </div>
-    <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-      <SC emoji="🤱" label="Allaitements" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight} cats={["feed"]}/>
-      <SC emoji="💧" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight} cats={["diaper_wet","diaper_both"]}/>
-      <SC emoji="💩" label="Caca" value={poo} sub={lastPoo?timeAgo(lastPoo.ts):null} color={C.golden} bg={C.goldenLight} cats={["diaper_poo","diaper_both"]}/>
-      <SC emoji="🌙" label="Nuit" value={nightMin?durLabel(nightMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
-      {lastW&&<SC emoji="⚖️" label="Poids" value={`${lastW.weight} kg`} color={C.sage} bg={C.sageLight} cats={["weight"]}/>}
+
+    {/* Vitamines du jour */}
+    <button className="tap" onClick={()=>vitDone?setMiniJournal({cats:["vitamin"],title:"💊 Vitamines"}):onAdd("vitamin")} style={{border:"none",borderRadius:18,padding:"12px 16px",cursor:"pointer",background:vitDone?C.sageLight:C.surface,boxShadow:vitDone?"none":C.shadow,display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+      <span style={{fontSize:22}}>💊</span>
+      <span style={{flex:1,fontSize:15,fontWeight:800,color:C.text}}>Vitamines du jour</span>
+      <span style={{fontSize:13,fontWeight:900,color:vitDone?C.sage:C.red,background:vitDone?"rgba(255,255,255,.6)":C.redLight,borderRadius:999,padding:"4px 10px"}}>{vitDone?"✓ Données":"À donner"}</span>
+    </button>
+
+    {/* Dernières 24h */}
+    <div>
+      <Title action={<span style={{fontSize:12,fontWeight:700,color:C.muted}}>dernières 24h</span>}>Aujourd'hui</Title>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+        <StatTile emoji="🤱" label="Tétées" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight} onClick={open(["feed"],"🤱 Allaitements")}/>
+        <StatTile emoji="💧" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight} onClick={open(["diaper_wet","diaper_both"],"💧 Pipi")}/>
+        <StatTile emoji="💩" label="Caca" value={poo} sub={lastPoo?timeAgo(lastPoo.ts):null} color={C.golden} bg={C.goldenLight} onClick={open(["diaper_poo","diaper_both"],"💩 Caca")}/>      </div>
+      {!simple&&<div style={{display:"grid",gridTemplateColumns:lastW?"1fr 1fr":"1fr",gap:8,marginTop:8}}>
+        <StatTile emoji="🌙" label="Plus longue nuit" value={nightMin?durLabel(nightMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
+        {lastW&&<StatTile emoji="⚖️" label="Dernier poids" value={`${lastW.weight} kg`} sub={fmtDate(lastW.ts)} color={C.sage} bg={C.sageLight} onClick={open(["weight"],"⚖️ Poids")}/>}
+      </div>}
     </div>
     {miniJournal&&<MiniJournal entries={entries} cats={miniJournal.cats} title={miniJournal.title} onClose={()=>setMiniJournal(null)} onEdit={onEdit} onDelete={onDelete}/>}
   </div>);
 }
 
 function Journal({entries,onDelete,onEdit}){
-  const groups=groupByDay(entries);
-  if(!entries.length)return<div style={{textAlign:"center",color:C.muted,padding:"40px 0"}}>Aucune entrée.<br/><span style={{fontSize:32}}>👶</span></div>;
-  return(<div style={{display:"flex",flexDirection:"column",gap:22}}>
-    {Object.entries(groups).map(([day,es])=>(
-      <div key={day}>
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:8}}>{fmtDate(es[0].ts)}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>{es.map(e=><EntryCard key={e.id} entry={e} onDelete={onDelete} onEdit={onEdit}/>)}</div>
-      </div>
-    ))}
+  if(!entries.length)return<Empty>Aucune entrée pour l'instant.</Empty>;
+  return(<div>
+    <Title>Journal</Title>
+    <DayGroups entries={entries} onDelete={onDelete} onEdit={onEdit}/>
   </div>);
 }
 
-function WeightChart({entries}){
+function WeightChart({entries,onAdd}){
   const ws=entries.filter(e=>e.cat==="weight").sort((a,b)=>new Date(a.ts)-new Date(b.ts));
-  if(ws.length<2)return<div style={{color:C.muted,textAlign:"center",padding:"40px 0"}}>Ajoutez au moins 2 pesées.</div>;
-  const PX=48,PY=24,PB=28,H=220;
-  const t0=new Date(ws[0].ts).getTime(),t1=new Date(ws[ws.length-1].ts).getTime(),totalMs=t1-t0||1;
-  const W=Math.max(300,Math.max(ws.length*60,(typeof window!=="undefined"?window.innerWidth:400)-32));
+  const addBtn=<Btn color={C.sage} onClick={onAdd} style={{width:"100%"}}>⚖️ Ajouter une pesée</Btn>;
+  if(ws.length<2)return(<div style={{display:"flex",flexDirection:"column",gap:16}}><Title>Courbe de poids</Title><Card style={{padding:"8px 0"}}><Empty>Ajoutez au moins 2 pesées.</Empty></Card>{addBtn}</div>);
+  const last=ws[ws.length-1],prev=ws[ws.length-2];
+  const diff=Math.round((last.weight-prev.weight)*1000);
+  const PX=44,PY=28,PB=30,H=240;
+  const t0=new Date(ws[0].ts).getTime(),t1=new Date(last.ts).getTime(),totalMs=t1-t0||1;
+  const W=Math.max(320,Math.max(ws.length*62,(typeof window!=="undefined"?Math.min(window.innerWidth,480):400)-32));
   const innerW=W-PX*2,innerH=H-PY-PB;
   const minW=Math.min(...ws.map(e=>e.weight))-0.05,maxW=Math.max(...ws.map(e=>e.weight))+0.05;
   const toX=ts=>PX+((new Date(ts).getTime()-t0)/totalMs)*innerW;
@@ -387,17 +470,24 @@ function WeightChart({entries}){
   const path=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
   const area=`${path} L${pts[pts.length-1].x},${PY+innerH} L${pts[0].x},${PY+innerH} Z`;
   const yVals=Array.from({length:5},(_,i)=>minW+(maxW-minW)*i/4);
-  return(<div>
-    <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Courbe de poids</div>
-    <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",margin:"0 -16px",padding:"0 16px"}}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:W,minWidth:W,height:H,display:"block"}}>
-        <rect width={W} height={H} fill={C.bg} rx={14}/>
-        {yVals.map((v,i)=>(<g key={i}><line x1={PX} y1={toY(v)} x2={W-PX} y2={toY(v)} stroke={C.border} strokeDasharray="4 3" strokeWidth={0.8}/><text x={PX-6} y={toY(v)+4} fontSize={9} fill={C.muted} textAnchor="end">{v.toFixed(3)}</text></g>))}
-        <path d={area} fill={C.sage} fillOpacity={0.08}/>
-        <path d={path} fill="none" stroke={C.sage} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>
-        {pts.map((p,i)=>(<g key={i}><circle cx={p.x} cy={p.y} r={5} fill={C.sage} stroke="#fff" strokeWidth={1.5}/><text x={p.x} y={p.y-11} fontSize={10} fill={C.sage} textAnchor="middle" fontWeight={700}>{p.w.toFixed(3)}</text><text x={p.x} y={H-8} fontSize={9} fill={C.muted} textAnchor="middle">{fmtShortDate(p.ts)}</text></g>))}
-      </svg>
+  return(<div className="stagger" style={{display:"flex",flexDirection:"column",gap:16}}>
+    <Title>Courbe de poids</Title>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+      <StatTile emoji="⚖️" label="Dernier poids" value={`${last.weight} kg`} sub={fmtDate(last.ts)} color={C.sage} bg={C.sageLight}/>
+      <StatTile emoji={diff>=0?"📈":"📉"} label="Depuis la pesée précédente" value={`${diff>=0?"+":""}${diff} g`} color={diff>=0?C.sage:C.red} bg={diff>=0?C.surface:C.redLight}/>
     </div>
+    <Card style={{padding:"14px 0",overflow:"hidden"}}>
+      <div ref={el=>{if(el)el.scrollLeft=el.scrollWidth;}} style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{width:W,minWidth:W,height:H,display:"block"}}>
+          <defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.sage} stopOpacity={0.28}/><stop offset="100%" stopColor={C.sage} stopOpacity={0}/></linearGradient></defs>
+          {yVals.map((v,i)=>(<g key={i}><line x1={PX} y1={toY(v)} x2={W-PX} y2={toY(v)} stroke={C.border} strokeDasharray="3 4" strokeWidth={0.8}/><text x={PX-6} y={toY(v)+4} fontSize={9} fill={C.muted} textAnchor="end">{v.toFixed(2)}</text></g>))}
+          <path d={area} fill="url(#wg)"/>
+          <path d={path} fill="none" stroke={C.sage} strokeWidth={3} strokeLinejoin="round" strokeLinecap="round"/>
+          {pts.map((p,i)=>(<g key={i}><circle cx={p.x} cy={p.y} r={5.5} fill="#fff" stroke={C.sage} strokeWidth={2.5}/><text x={p.x} y={p.y-12} fontSize={10} fill={C.sage} textAnchor="middle" fontWeight={800}>{p.w.toFixed(3)}</text><text x={p.x} y={H-10} fontSize={9} fill={C.muted} textAnchor="middle">{fmtShortDate(p.ts)}</text></g>))}
+        </svg>
+      </div>
+    </Card>
+    {addBtn}
   </div>);
 }
 
@@ -511,8 +601,6 @@ function PDFReport({data,onClose}){
           <th style={{padding:"5px 8px",textAlign:"center"}}>💩</th>
           <th style={{padding:"5px 8px",textAlign:"center"}}>🌙 Nuit</th>
           <th style={{padding:"5px 8px",textAlign:"center"}}>💊</th>
-          <th style={{padding:"5px 8px",textAlign:"center"}}>🦠</th>
-          <th style={{padding:"5px 8px",textAlign:"center"}}>🌀</th>
         </tr></thead>
         <tbody>
           {statsRows.map((r,i)=>(<tr key={i} style={{background:i%2===0?"#FBF7F4":"white"}}>
@@ -522,8 +610,6 @@ function PDFReport({data,onClose}){
             <td style={{padding:"4px 8px",textAlign:"center"}}>{r.poo}</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:C.lavender,fontWeight:600}}>{nightDursPDF[i].v?durLabel(nightDursPDF[i].v):"—"}</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:r.vit?C.sage:C.red,fontWeight:700}}>{r.vit?"✓":"✗"}</td>
-            <td style={{padding:"4px 8px",textAlign:"center",color:r.prob?C.sage:C.red,fontWeight:700}}>{r.prob?"✓":"✗"}</td>
-            <td style={{padding:"4px 8px",textAlign:"center",color:r.nom?C.sage:C.red,fontWeight:700}}>{r.nom?"✓":"✗"}</td>
           </tr>))}
           <tr style={{background:C.accentLight,fontWeight:700}}>
             <td style={{padding:"4px 8px"}}>Moy./jour</td>
@@ -532,8 +618,6 @@ function PDFReport({data,onClose}){
             <td style={{padding:"4px 8px",textAlign:"center"}}>{Math.round(statsRows.reduce((s,r)=>s+r.poo,0)/7*10)/10}</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:C.lavender}}>{avgNightDurPDF?durLabel(avgNightDurPDF):"—"}</td>
             <td style={{padding:"4px 8px",textAlign:"center",color:vitDays<7?C.red:C.sage}}>{vitDays}/7</td>
-            <td style={{padding:"4px 8px",textAlign:"center",color:probDays<7?C.red:C.sage}}>{probDays}/7</td>
-            <td style={{padding:"4px 8px",textAlign:"center",color:nombrilDays<7?C.red:C.sage}}>{nombrilDays}/7</td>
           </tr>
         </tbody>
       </table>
@@ -553,8 +637,6 @@ function PDFReport({data,onClose}){
         {avgGap&&<div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${C.accent}`,fontSize:11}}>🤱 Intervalle moyen : <strong>{durLabel(avgGap)}</strong></div>}
         {avgNF>0&&<div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${C.lavender}`,fontSize:11}}>🌙 Tétées nocturnes : <strong>{avgNF}/nuit</strong></div>}
         <div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${vitDays<7?C.red:C.sage}`,fontSize:11}}>💊 Vitamines : <strong style={{color:vitDays<7?C.red:C.sage}}>{vitDays}/7 j</strong></div>
-        <div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${probDays<7?C.red:C.sage}`,fontSize:11}}>🦠 Probiotic : <strong style={{color:probDays<7?C.red:C.sage}}>{probDays}/7 j</strong></div>
-        <div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${nombrilDays<7?C.red:C.sage}`,fontSize:11}}>🌀 Nombril : <strong style={{color:nombrilDays<7?C.red:C.sage}}>{nombrilDays}/7 j</strong></div>
         {weightGain!=null&&<div style={{background:"#FBF7F4",borderRadius:8,padding:"7px 10px",borderLeft:`3px solid ${C.sage}`,fontSize:11}}>⚖️ Reprise : <strong style={{color:C.sage}}>+{weightGain} g{dailyGain?` (${dailyGain} g/j)`:""}</strong></div>}
       </div>
     </div>
@@ -799,91 +881,118 @@ function StatsTab({entries,data,onShowPDF,onShowMonthly}){
 
   function BarChart({data:bdata,color}){
     const m=Math.max(...bdata.map(d=>d.v),1);
-    return(<div style={{display:"flex",alignItems:"flex-end",gap:4,height:60}}>
-      {bdata.map((d,i)=>(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-        <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v||""}</div>
-        <div style={{width:"100%",background:color,opacity:0.15+0.85*(d.v/m),borderRadius:"4px 4px 0 0",height:Math.max(d.v/m*44,d.v?4:0)}}/>
-        <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
+    return(<div style={{display:"flex",alignItems:"flex-end",gap:6,height:78}}>
+      {bdata.map((d,i)=>(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+        <div style={{fontSize:11,color:d.v?color:C.muted,fontWeight:800}}>{d.v||""}</div>
+        <div style={{width:"100%",maxWidth:30,background:color,opacity:i===bdata.length-1?1:0.35+0.45*(d.v/m),borderRadius:8,height:Math.max(d.v/m*48,d.v?6:3)}}/>
+        <div style={{fontSize:10,color:i===bdata.length-1?C.text:C.muted,fontWeight:i===bdata.length-1?800:600,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
       </div>))}
     </div>);
   }
-  const Sec=({title,children})=>(<div style={{background:C.surface,borderRadius:16,padding:"16px",border:`1px solid ${C.border}`}}><div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>{title}</div>{children}</div>);
-  const KV=({label,value,color})=>(<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingBottom:8,borderBottom:`1px solid ${C.border}`,marginBottom:8}}><span style={{fontSize:13,color:C.muted}}>{label}</span><span style={{fontSize:15,fontWeight:700,color:color||C.text}}>{value}</span></div>);
+  const Sec=({title,children})=>(<Card style={{padding:"16px 18px"}}><div style={{fontSize:15,fontWeight:900,marginBottom:14}}>{title}</div>{children}</Card>);
+  const KV=({label,value,color,last})=>(<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",padding:"9px 0",borderBottom:last?"none":`1px solid ${C.bg}`}}><span style={{fontSize:14,color:C.muted,fontWeight:600}}>{label}</span><span style={{fontSize:16,fontWeight:900,color:color||C.text}}>{value}</span></div>);
+  const ReportBtn=({emoji,title,sub,color,bg,onClick})=>(<button className="tap" onClick={onClick} style={{flex:1,background:bg,border:"none",borderRadius:20,padding:"14px",textAlign:"left",cursor:"pointer"}}>
+    <div style={{fontSize:24}}>{emoji}</div>
+    <div style={{fontSize:15,fontWeight:900,color,marginTop:4}}>{title}</div>
+    <div style={{fontSize:12,fontWeight:700,color:C.muted}}>{sub}</div>
+  </button>);
 
-  return(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-    <button onClick={onShowPDF} style={{background:C.accent,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>📄 Rapport hebdomadaire (PDF)</button>
-    <button onClick={onShowMonthly} style={{background:C.lavender,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>📅 Rapport mensuel</button>
-    <Sec title="📈 Tendances (24h vs veille)">
-      <div style={{display:"flex",gap:10}}>
+  return(<div className="stagger" style={{display:"flex",flexDirection:"column",gap:14}}>
+    <Title>Statistiques</Title>
+    <div style={{display:"flex",gap:10}}>
+      <ReportBtn emoji="📄" title="Rapport" sub="7 derniers jours" color={C.accent} bg={C.accentLight} onClick={onShowPDF}/>
+      <ReportBtn emoji="📅" title="Rapport" sub="mensuel" color={C.lavender} bg={C.lavenderLight} onClick={onShowMonthly}/>
+    </div>
+    <Sec title="Tendances · 24h vs veille">
+      <div style={{display:"flex",gap:8}}>
         {[["🤱","Allaitement",trend("feed",e48a,e48b)],["💧","Pipi",trend("diaper_wet",e48a,e48b)],["💩","Caca",trend("diaper_poo",e48a,e48b)]].map(([emoji,label,t])=>(
-          <div key={label} style={{flex:1,background:C.bg,borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
-            <div style={{fontSize:22}}>{emoji}</div>
-            <div style={{fontSize:22,fontWeight:800,color:t.color}}>{t.arrow}</div>
-            <div style={{fontSize:10,color:C.muted,fontWeight:600}}>{label}</div>
+          <div key={label} style={{flex:1,background:C.bg,borderRadius:16,padding:"10px 6px",textAlign:"center"}}>
+            <div style={{fontSize:20}}>{emoji}</div>
+            <div style={{fontSize:24,fontWeight:900,color:t.color,lineHeight:1.2}}>{t.arrow}</div>
+            <div style={{fontSize:11,color:C.muted,fontWeight:800}}>{label}</div>
           </div>
         ))}
       </div>
     </Sec>
-    <Sec title="📊 Moyennes sur 7 jours">
+    <Sec title="Moyennes sur 7 jours">
       <KV label="Allaitements / jour" value={avg(feedsByDay.map(d=>d.v))}/>
       <KV label="Pipi / jour" value={avg(wetByDay.map(d=>d.v))}/>
       <KV label="Caca / jour" value={avg(pooByDay.map(d=>d.v))}/>
-      <KV label="Tétées nocturnes (22h-6h)" value={avgNightFeeds}/>
-      {avgGap&&<KV label="Intervalle moyen entre tétées" value={durLabel(avgGap)}/>}
+      <KV label="Tétées nocturnes (22h-6h)" value={avgNightFeeds} last={!avgGap}/>
+      {avgGap&&<KV label="Intervalle entre tétées" value={durLabel(avgGap)} last/>}
     </Sec>
-    {avgNightDur&&<Sec title="🌙 Durée des nuits — 7 jours">
-      <div style={{display:"flex",alignItems:"flex-end",gap:4,height:80,marginBottom:8}}>
-        {nightDurations.map((d,i)=>{const m=Math.max(...nightDurations.map(x=>x.v||0),1);return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-          <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.v?durLabel(d.v):""}</div>
-          <div style={{width:"100%",background:C.lavender,opacity:d.v?0.15+0.85*(d.v/m):0.08,borderRadius:"4px 4px 0 0",height:d.v?Math.max(d.v/m*60,4):3}}/>
-          <div style={{fontSize:8,color:C.muted,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
+    {avgNightDur&&<Sec title="Durée des nuits">
+      <div style={{display:"flex",alignItems:"flex-end",gap:6,height:96,marginBottom:10}}>
+        {nightDurations.map((d,i)=>{const m=Math.max(...nightDurations.map(x=>x.v||0),1);return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+          <div style={{fontSize:10,color:C.lavender,fontWeight:800,whiteSpace:"nowrap"}}>{d.v?durLabel(d.v):""}</div>
+          <div style={{width:"100%",maxWidth:30,background:C.lavender,opacity:d.v?0.35+0.65*(d.v/m):0.12,borderRadius:8,height:d.v?Math.max(d.v/m*60,6):3}}/>
+          <div style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center",lineHeight:1.1}}>{d.label}</div>
         </div>);
         })}
       </div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
-        <span style={{color:C.muted}}>Moyenne</span>
-        <span style={{fontWeight:700,color:C.lavender}}>{durLabel(avgNightDur)}</span>
-      </div>
+      <KV label="Moyenne" value={durLabel(avgNightDur)} color={C.lavender} last/>
     </Sec>}
-    <Sec title="🤱 Allaitements par jour"><BarChart data={feedsByDay} color={C.accent}/></Sec>
-    <Sec title="💧 Pipi par jour"><BarChart data={wetByDay} color={C.sky}/></Sec>
-    <Sec title="💩 Caca par jour"><BarChart data={pooByDay} color={C.golden}/></Sec>
-    {weights.length>=2&&<Sec title="⚖️ Croissance">
+    <Sec title="Allaitements par jour"><BarChart data={feedsByDay} color={C.accent}/></Sec>
+    <Sec title="Pipi par jour"><BarChart data={wetByDay} color={C.sky}/></Sec>
+    <Sec title="Caca par jour"><BarChart data={pooByDay} color={C.golden}/></Sec>
+    {weights.length>=2&&<Sec title="Croissance">
       <KV label="Poids initial" value={`${weights[0].weight} kg`}/>
       <KV label="Poids minimum" value={`${minW} kg`} color={C.red}/>
-      <KV label="Poids actuel" value={`${lastW.weight} kg`} color={C.sage}/>
-      {weightGain!=null&&<KV label="Prise de poids totale" value={`+${weightGain} g`} color={C.sage}/>}
-      {dailyGain&&<KV label="Gain moyen / jour" value={`+${dailyGain} g`} color={dailyGain>=15&&dailyGain<=40?C.sage:C.golden}/>}
+      <KV label="Poids actuel" value={`${lastW.weight} kg`} color={C.sage} last={weightGain==null&&!dailyGain}/>
+      {weightGain!=null&&<KV label="Prise de poids totale" value={`+${weightGain} g`} color={C.sage} last={!dailyGain}/>}
+      {dailyGain&&<KV label="Gain moyen / jour" value={`+${dailyGain} g`} color={dailyGain>=15&&dailyGain<=40?C.sage:C.golden} last/>}
     </Sec>}
-    <Sec title="💊 Soins — 7 derniers jours">
-      <KV label="Vitamines" value={`${vitDays}/7 jours`} color={vitDays>=6?C.sage:vitDays>=4?C.golden:C.red}/>
-      <KV label="Probiotic" value={`${probDays}/7 jours`} color={probDays>=6?C.sage:probDays>=4?C.golden:C.red}/>
-      <KV label="Nombril désinfecté" value={`${nombrilDays}/7 jours`} color={nombrilDays>=6?C.sage:nombrilDays>=4?C.golden:C.red}/>
+    <Sec title="Vitamines · 7 derniers jours">
+      <KV label="Jours avec vitamines" value={`${vitDays}/7`} color={vitDays>=6?C.sage:vitDays>=4?C.golden:C.red} last/>
     </Sec>
-    <Sec title="✨ Faits marquants">
-      {weightGain!=null&&<div style={{background:C.sageLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.sage,marginBottom:8}}>⚖️ Rose a pris <strong>{weightGain} g</strong> depuis le minimum{dailyGain?` (${dailyGain} g/jour)`:""}</div>}
-      {avgGap&&<div style={{background:C.accentLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.accent,marginBottom:8}}>🤱 Intervalle moyen entre tétées : <strong>{durLabel(avgGap)}</strong></div>}
-      {avgNightFeeds>0&&<div style={{background:C.lavenderLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.lavender,marginBottom:8}}>🌙 <strong>{avgNightFeeds}</strong> tétée{avgNightFeeds>1?"s":""} nocturne{avgNightFeeds>1?"s":""} par nuit</div>}
-      {vitDays<7&&<div style={{background:C.redLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.red,marginBottom:8}}>💊 Vitamines oubliées <strong>{7-vitDays} jour{7-vitDays>1?"s":""}</strong> cette semaine</div>}
-      {probDays<7&&<div style={{background:C.redLight,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.red,marginBottom:8}}>🦠 Probiotic oublié <strong>{7-probDays} jour{7-probDays>1?"s":""}</strong> cette semaine</div>}
+    <Sec title="Faits marquants">
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {weightGain!=null&&<div style={{background:C.sageLight,borderRadius:14,padding:"11px 13px",fontSize:14,color:C.sage,fontWeight:600}}>⚖️ {data.babyName} a pris <strong>{weightGain} g</strong> depuis le minimum{dailyGain?` (${dailyGain} g/jour)`:""}</div>}
+        {avgGap&&<div style={{background:C.accentLight,borderRadius:14,padding:"11px 13px",fontSize:14,color:C.accent,fontWeight:600}}>🤱 Intervalle moyen entre tétées : <strong>{durLabel(avgGap)}</strong></div>}
+        {avgNightFeeds>0&&<div style={{background:C.lavenderLight,borderRadius:14,padding:"11px 13px",fontSize:14,color:C.lavender,fontWeight:600}}>🌙 <strong>{avgNightFeeds}</strong> tétée{avgNightFeeds>1?"s":""} nocturne{avgNightFeeds>1?"s":""} par nuit</div>}
+        {vitDays<7&&<div style={{background:C.redLight,borderRadius:14,padding:"11px 13px",fontSize:14,color:C.red,fontWeight:600}}>💊 Vitamines oubliées <strong>{7-vitDays} jour{7-vitDays>1?"s":""}</strong> cette semaine</div>}
+      </div>
     </Sec>
   </div>);
 }
 
-function Settings({data,onUpdate,syncStatus}){
+function Settings({data,onUpdate,syncStatus,mode,onMode}){
   const[name,setName]=useState(data.babyName);
   const[birth,setBirth]=useState(data.birthDate);
   const[author,setAuthor]=useState(()=>{try{return localStorage.getItem("bt_author")||"";}catch{return"";}});
   function saveAuthor(v){setAuthor(v);try{localStorage.setItem("bt_author",v);}catch{}}
-  const sc={ok:{bg:C.sageLight,c:C.sage,t:"✓ Synchronisé avec Firebase"},syncing:{bg:"#FFF8E1",c:C.golden,t:"🔄 Synchronisation…"},error:{bg:C.redLight,c:C.red,t:"⚠️ Erreur de connexion"},offline:{bg:"#F5F5F5",c:C.muted,t:"📴 Mode hors ligne"}}[syncStatus]||{};
-  return(<div style={{display:"flex",flexDirection:"column",gap:18}}>
-    <div style={{background:sc.bg,borderRadius:12,padding:"12px 16px",fontSize:13,color:sc.c,fontWeight:600}}>{sc.t}</div>
-    <Inp label="Prénom du bébé" value={name} onChange={e=>setName(e.target.value)}/>
-    <Inp label="Date de naissance" type="date" value={birth} onChange={e=>setBirth(e.target.value)}/>
-    <Inp label="Votre prénom" value={author} onChange={e=>saveAuthor(e.target.value)} placeholder="ex: Papa"/>
-    <Btn color={C.accent} onClick={()=>onUpdate({babyName:name,birthDate:birth})}>Sauvegarder</Btn>
-    <hr style={{border:"none",borderTop:`1px solid ${C.border}`}}/>
-    <div style={{fontSize:13,color:C.muted}}><strong>{data.entries.length}</strong> entrées</div>
+  const sc={ok:{bg:C.sageLight,c:C.sage,t:"✓ Synchronisé"},syncing:{bg:C.goldenLight,c:C.golden,t:"Synchronisation…"},error:{bg:C.redLight,c:C.red,t:"⚠️ Erreur de connexion"},offline:{bg:"#F1ECE8",c:C.muted,t:"Hors ligne"}}[syncStatus]||{};
+  return(<div className="stagger" style={{display:"flex",flexDirection:"column",gap:14}}>
+    <Title action={<span style={{background:sc.bg,color:sc.c,borderRadius:999,padding:"4px 10px",fontSize:12,fontWeight:800}}>{sc.t}</span>}>Réglages</Title>
+    <Card style={{padding:18}}>
+      <Form>
+        <Inp label="Prénom du bébé" value={name} onChange={e=>setName(e.target.value)}/>
+        <Inp label="Date de naissance" type="date" value={birth} onChange={e=>setBirth(e.target.value)}/>
+        <Btn color={C.accent} onClick={()=>onUpdate({babyName:name,birthDate:birth})}>Sauvegarder</Btn>
+      </Form>
+    </Card>
+    <Card style={{padding:18}}>
+      <Form>
+        <Inp label="Votre prénom (sur ce téléphone)" value={author} onChange={e=>saveAuthor(e.target.value)} placeholder="ex: Papa"/>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <Label>Affichage sur ce téléphone</Label>
+          <ModeSwitch mode={mode} onChange={onMode} wide/>
+          <div style={{fontSize:12,color:C.muted,fontWeight:600,lineHeight:1.4}}>« Essentiel » ne garde que les actions du quotidien, en gros boutons.</div>
+        </div>
+      </Form>
+    </Card>
+    <Btn ghost color={C.muted} onClick={()=>window.location.reload()}>🔄 Recharger l'application</Btn>
+    <div style={{textAlign:"center",fontSize:13,color:C.muted,fontWeight:700}}><strong>{data.entries.length}</strong> entrées enregistrées</div>
+  </div>);
+}
+
+// Interrupteur glissant Essentiel / Complet
+function ModeSwitch({mode,onChange,wide}){
+  const opts=[["essentiel","Essentiel"],["complet","Complet"]];
+  const i=mode==="essentiel"?0:1;
+  return(<div style={{position:"relative",display:"grid",gridTemplateColumns:"1fr 1fr",background:"rgba(45,33,24,.07)",borderRadius:999,padding:3,width:wide?"100%":176}}>
+    <div style={{position:"absolute",top:3,bottom:3,left:3,width:"calc(50% - 3px)",borderRadius:999,background:C.surface,boxShadow:"0 2px 8px rgba(45,33,24,.14)",transform:`translateX(${i*100}%)`,transition:"transform .3s cubic-bezier(.3,1.3,.5,1)"}}/>
+    {opts.map(([m,l])=>(<button key={m} onClick={()=>onChange(m)} style={{position:"relative",zIndex:1,background:"none",border:"none",padding:wide?"10px 0":"7px 0",fontSize:13,fontWeight:900,color:mode===m?C.accent:C.muted,cursor:"pointer",transition:"color .2s"}}>{l}</button>))}
   </div>);
 }
 
@@ -894,7 +1003,13 @@ function App(){
   const[syncStatus,setSyncStatus]=useState("syncing");
   const[showPDF,setShowPDF]=useState(false);
   const[showMonthly,setShowMonthly]=useState(false);
+  const[toast,setToast]=useState(null);
+  const[mode,setMode]=useState(()=>{try{return localStorage.getItem("bt_mode")||"complet";}catch{return"complet";}});
+  const simple=mode==="essentiel";
+  function changeMode(m){setMode(m);try{localStorage.setItem("bt_mode",m);}catch{}if(m==="essentiel"&&(tab==="stats"||tab==="weight"))setTab("home");}
   const saveTimer=useRef(null);
+  const toastTimer=useRef(null);
+  function showToast(text){clearTimeout(toastTimer.current);setToast({text,k:Date.now()});toastTimer.current=setTimeout(()=>setToast(null),1900);}
 
   useEffect(()=>{
     fbRead().then(remote=>{
@@ -924,15 +1039,16 @@ function App(){
 
   function persist(next){setData(next);setSyncStatus("syncing");clearTimeout(saveTimer.current);saveTimer.current=setTimeout(()=>{fbWrite(next).then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("error"));},800);}
   const author=()=>{try{return localStorage.getItem("bt_author")||"";}catch{return"";}};
-  function addEntry(payload){const entry={id:Date.now()+Math.random(),...payload,author:author()||undefined};persist({...data,entries:[entry,...data.entries]});setModal(null);}
-  function editEntry(payload){persist({...data,entries:data.entries.map(e=>e.id===modal.entry.id?{...e,...payload}:e)});setModal(null);}
-  function deleteEntry(id){persist({...data,entries:data.entries.filter(e=>e.id!==id)});}
-  function updateMeta(patch){persist({...data,...patch});}
+  function addEntry(payload){const entry={id:Date.now()+Math.random(),...payload,author:author()||undefined};persist({...data,entries:[entry,...data.entries]});setModal(null);const c=CATS[payload.cat];showToast(`✓ Enregistré · ${c?c.emoji+" "+c.label:""}`);}
+  function editEntry(payload){persist({...data,entries:data.entries.map(e=>e.id===modal.entry.id?{...e,...payload}:e)});setModal(null);showToast("✓ Modifié");}
+  function deleteEntry(id){persist({...data,entries:data.entries.filter(e=>e.id!==id)});showToast("Entrée supprimée");}
+  function updateMeta(patch){persist({...data,...patch});showToast("✓ Sauvegardé");}
   const isEditing=modal&&modal.entry;
   const mType=modal?.type,mEntry=modal?.entry;
   function handleSave(p){isEditing?editEntry(p):addEntry(p);}
-  function openModal(cat){setModal({type:cat});}
+  function openModal(cat,preset){setModal({type:cat,preset});}
   function openEdit(entry){setModal({type:entry.cat,entry});}
+  function goTab(t){if(t===tab)return;setTab(t);window.scrollTo({top:0});}
 
   function ageLabel(){
     if(!data.birthDate)return null;
@@ -944,72 +1060,99 @@ function App(){
 
   const QUICK=[
     "feed","diaper_wet","diaper_poo","diaper_both",
-    "sleep","vitamin","probiotic","nombril",
-    "nez","pump","weight","temperature","bath","note",
+    "sleep","vitamin","nez","pump",
+    "weight","temperature","bath","note",
   ];
+  const QUICK_ESSENTIEL=[
+    {cat:"feed",label:"Sein gauche",emoji:"🤱",preset:{side:"Gauche"}},
+    {cat:"feed",label:"Sein droit",emoji:"🤱",preset:{side:"Droit"}},
+    {cat:"diaper_wet"},
+    {cat:"diaper_both"},
+    {cat:"vitamin"},
+  ];
+  const TABS=[["home","🏠","Accueil"],["journal","📋","Journal"],["stats","📊","Stats"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].filter(([t])=>!simple||t!=="stats"&&t!=="weight");
   const SIMPLE_CATS=["vitamin","bath","mood","note","nombril","nez","probiotic"];
   const sorted=[...data.entries].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
-  const syncDot={ok:"🟢",syncing:"🟡",error:"🔴",offline:"⚫"}[syncStatus]||"🟡";
+  const nRecent=simple?3:5;
+  const syncColor={ok:C.sage,syncing:C.golden,error:C.red,offline:"#B8A99B"}[syncStatus]||C.golden;
 
   return(<div style={{background:C.bg,minHeight:"100vh",color:C.text}}>
     {showPDF&&<PDFReport data={data} onClose={()=>setShowPDF(false)}/>}
-    <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"14px 20px 12px",position:"sticky",top:0,zIndex:40}}>
-      <div style={{maxWidth:480,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:800,color:C.accent}}>🌸 {data.babyName}</div>
-          {ageLabel()&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>{ageLabel()}</div>}
+    {showMonthly&&<MonthlyReport data={data} onClose={()=>setShowMonthly(false)}/>}
+
+    {/* En-tête */}
+    <div style={{background:"rgba(251,247,244,.86)",backdropFilter:"saturate(1.6) blur(16px)",WebkitBackdropFilter:"saturate(1.6) blur(16px)",borderBottom:"1px solid rgba(232,221,212,.7)",padding:"calc(12px + env(safe-area-inset-top)) 16px 12px",position:"sticky",top:0,zIndex:40}}>
+      <div style={{maxWidth:480,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+          <div style={{width:42,height:42,borderRadius:21,background:"linear-gradient(135deg,#F6D5C4,#F0B9A0)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,boxShadow:"0 4px 10px -4px rgba(201,122,90,.6)"}}>🌸</div>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:20,fontWeight:900,letterSpacing:-.3,lineHeight:1.1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{data.babyName}</div>
+            <div style={{fontSize:12,color:C.muted,fontWeight:700,display:"flex",alignItems:"center",gap:6,marginTop:2}}>
+              {ageLabel()}
+              <span title={syncStatus} style={{width:7,height:7,borderRadius:4,background:syncColor,display:"inline-block",animation:syncStatus==="syncing"?"pulse 1s ease infinite":"none"}}/>
+            </div>
+          </div>
         </div>
-        <span style={{fontSize:18}}>{syncDot}</span>
+        <ModeSwitch mode={mode} onChange={changeMode}/>
       </div>
     </div>
-    <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px 100px"}}>
+
+    {/* Contenu */}
+    <div key={tab+mode} className="page" style={{maxWidth:480,margin:"0 auto",padding:"18px 16px calc(120px + env(safe-area-inset-bottom))"}}>
       {tab==="home"&&(<div style={{display:"flex",flexDirection:"column",gap:24}}>
-        <TodayStats entries={data.entries} onEdit={openEdit} onDelete={deleteEntry}/>
+        <TodayStats entries={data.entries} onEdit={openEdit} onDelete={deleteEntry} onAdd={openModal} simple={simple}/>
         <div>
-          <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Ajouter</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-            {QUICK.map(cat=>{const c=CATS[cat];return(
-              <button key={cat} onClick={()=>openModal(cat)} style={{background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"10px 4px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                <span style={{fontSize:22}}>{c.emoji}</span>
-                <span style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{c.label}</span>
+          <Title>Ajouter</Title>
+          <div className="stagger" style={{display:"grid",gridTemplateColumns:simple?"repeat(2,1fr)":"repeat(4,1fr)",gap:simple?10:8}}>
+            {simple?QUICK_ESSENTIEL.map((q,i)=>{const c=CATS[q.cat];return(
+              <button key={i} className="tap" onClick={()=>openModal(q.cat,q.preset)} style={{gridColumn:i===QUICK_ESSENTIEL.length-1&&QUICK_ESSENTIEL.length%2?"span 2":undefined,background:C.surface,border:"none",borderRadius:22,padding:"16px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:C.shadow,textAlign:"left"}}>
+                <span style={{width:48,height:48,borderRadius:16,background:c.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:eSize(q.emoji||c.emoji,26),whiteSpace:"nowrap",flexShrink:0}}>{q.emoji||c.emoji}</span>
+                <span style={{fontSize:15,color:C.text,fontWeight:900,lineHeight:1.15}}>{q.label||c.label}</span>
+              </button>
+            );}):QUICK.map(cat=>{const c=CATS[cat];return(
+              <button key={cat} className="tap" onClick={()=>openModal(cat)} style={{background:C.surface,border:"none",borderRadius:18,padding:"12px 4px 10px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,boxShadow:C.shadow}}>
+                <span style={{width:40,height:40,borderRadius:13,background:c.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:eSize(c.emoji,20),whiteSpace:"nowrap"}}>{c.emoji}</span>
+                <span style={{fontSize:11,color:C.text,fontWeight:800,textAlign:"center",lineHeight:1.15}}>{c.label}</span>
               </button>
             );})}
           </div>
         </div>
         {sorted.length>0&&(<div>
-          <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Récent</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>{sorted.slice(0,5).map(e=><EntryCard key={e.id} entry={e} onDelete={deleteEntry} onEdit={openEdit}/>)}</div>
-          {sorted.length>5&&<button onClick={()=>setTab("journal")} style={{background:"none",border:"none",color:C.accent,fontWeight:700,cursor:"pointer",marginTop:8,fontSize:14}}>Voir tout le journal →</button>}
+          <Title action={sorted.length>nRecent&&<button className="tap" onClick={()=>goTab("journal")} style={{background:"none",border:"none",color:C.accent,fontWeight:800,cursor:"pointer",fontSize:14}}>Tout voir ›</button>}>Récent</Title>
+          <EntryList entries={sorted.slice(0,nRecent)} onDelete={deleteEntry} onEdit={openEdit}/>
         </div>)}
       </div>)}
       {tab==="journal"&&<Journal entries={data.entries} onDelete={deleteEntry} onEdit={openEdit}/>}
-      {tab==="stats"&&<StatsTab entries={data.entries} data={data} onShowPDF={()=>setShowPDF(true)}/>}
-      {tab==="weight"&&<WeightChart entries={data.entries}/>}
-      {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus}/>}
+      {tab==="stats"&&<StatsTab entries={data.entries} data={data} onShowPDF={()=>setShowPDF(true)} onShowMonthly={()=>setShowMonthly(true)}/>}
+      {tab==="weight"&&<WeightChart entries={data.entries} onAdd={()=>openModal("weight")}/>}
+      {tab==="settings"&&<Settings data={data} onUpdate={updateMeta} syncStatus={syncStatus} mode={mode} onMode={changeMode}/>}
     </div>
-    <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0 20px",zIndex:50}}>
-      {[["home","🏠","Accueil"],["journal","📋","Journal"],["stats","📊","Stats"],["weight","📈","Courbe"],["settings","⚙️","Réglages"]].map(([t,emoji,label])=>(
-        <button key={t} onClick={()=>setTab(t)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===t?C.accent:C.muted,fontWeight:tab===t?700:400,fontSize:11}}>
-          <span style={{fontSize:22}}>{emoji}</span>{label}
-        </button>
-      ))}
-    </div>
-    {modal&&(
-      <div style={{position:"fixed",inset:0,background:"rgba(45,33,24,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}>
-        <div style={{background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:480,height:"80vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-            <div style={{fontSize:18,fontWeight:800}}>{isEditing?"✏️ Modifier":<>{CATS[mType]?.emoji} {CATS[mType]?.label}</>}</div>
-            <button onClick={()=>setModal(null)} style={{background:"none",border:"none",fontSize:24,cursor:"pointer",color:C.muted}}>×</button>
-          </div>
-          {mType==="feed"&&<FeedForm onSave={handleSave} initial={mEntry}/>}
-          {mType==="pump"&&<PumpForm onSave={handleSave} initial={mEntry}/>}
-          {(mType==="diaper_wet"||mType==="diaper_poo"||mType==="diaper_both")&&<DiaperForm type={mType} onSave={handleSave} initial={mEntry}/>}
-          {mType==="sleep"&&<SleepForm onSave={handleSave} initial={mEntry}/>}
-          {mType==="weight"&&<WeightForm onSave={handleSave} initial={mEntry}/>}
-          {mType==="temperature"&&<TempForm onSave={handleSave} initial={mEntry}/>}
-          {SIMPLE_CATS.includes(mType)&&<SimpleForm cat={mType} color={CATS[mType].color} onSave={handleSave} initial={mEntry}/>}
-        </div>
+
+    {/* Navigation */}
+    <div style={{position:"fixed",left:12,right:12,bottom:"calc(10px + env(safe-area-inset-bottom))",zIndex:50,display:"flex",justifyContent:"center",pointerEvents:"none"}}>
+      <div style={{pointerEvents:"auto",width:"100%",maxWidth:456,display:"flex",gap:4,padding:6,background:"rgba(255,255,255,.82)",backdropFilter:"saturate(1.8) blur(20px)",WebkitBackdropFilter:"saturate(1.8) blur(20px)",borderRadius:26,border:"1px solid rgba(255,255,255,.7)",boxShadow:"0 12px 32px -10px rgba(45,33,24,.28),0 2px 6px rgba(45,33,24,.06)"}}>
+        {TABS.map(([t,,label])=>{const on=tab===t;return(
+          <button key={t} className="tap" onClick={()=>goTab(t)} style={{flex:1,background:on?C.text:"transparent",border:"none",borderRadius:20,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"9px 0 7px",color:on?"#fff":C.muted,fontWeight:700,fontSize:11,transition:"background-color .25s, color .25s"}}>
+            <Icon name={t==="home"?"home":t} size={21}/>{label}
+          </button>
+        );})}
       </div>
+    </div>
+
+    {/* Confirmation */}
+    {toast&&<div key={toast.k} style={{position:"fixed",left:"50%",bottom:"calc(96px + env(safe-area-inset-bottom))",background:C.text,color:"#fff",padding:"11px 18px",borderRadius:999,fontWeight:800,fontSize:14,zIndex:250,animation:"toast 1.9s ease both",boxShadow:"0 10px 24px -8px rgba(45,33,24,.5)",whiteSpace:"nowrap",pointerEvents:"none"}}>{toast.text}</div>}
+
+    {/* Formulaires */}
+    {modal&&(
+      <Sheet key={modal.entry?.id||modal.type} title={isEditing?<>✏️ Modifier · {CATS[mType]?.label}</>:<>{CATS[mType]?.emoji} {mType==="feed"&&modal.preset?.side?`Sein ${modal.preset.side.toLowerCase()}`:CATS[mType]?.label}</>} onClose={()=>setModal(null)}>
+        {mType==="feed"&&<FeedForm onSave={handleSave} initial={mEntry} simple={simple} preset={modal.preset}/>}
+        {mType==="pump"&&<PumpForm onSave={handleSave} initial={mEntry}/>}
+        {(mType==="diaper_wet"||mType==="diaper_poo"||mType==="diaper_both")&&<DiaperForm type={mType} onSave={handleSave} initial={mEntry} simple={simple}/>}
+        {mType==="sleep"&&<SleepForm onSave={handleSave} initial={mEntry}/>}
+        {mType==="weight"&&<WeightForm onSave={handleSave} initial={mEntry}/>}
+        {mType==="temperature"&&<TempForm onSave={handleSave} initial={mEntry}/>}
+        {SIMPLE_CATS.includes(mType)&&<SimpleForm cat={mType} color={CATS[mType].color} onSave={handleSave} initial={mEntry}/>}
+      </Sheet>
     )}
   </div>);
 }
