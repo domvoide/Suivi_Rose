@@ -74,7 +74,7 @@ const CATS={
   pump:       {label:"Tire-lait",   emoji:"🍼",color:C.accent,  bg:C.accentLight,icon:"bottle"},
   weight:     {label:"Poids",       emoji:"⚖️",color:C.sage,    bg:C.sageLight,icon:"scale"},
   vitamin:    {label:"Vitamines",   emoji:"💊",color:C.sage,    bg:C.sageLight,icon:"pill"},
-  probiotic:  {label:"Probiotic",   emoji:"🦠",color:C.teal,    bg:C.tealLight,icon:"bacteria"},
+  probiotic:  {label:"Probiotique", emoji:"🦠",color:C.teal,    bg:C.tealLight,icon:"bacteria"},
   nombril:    {label:"Nombril",     emoji:"🌀",color:C.teal,    bg:C.tealLight,icon:"target"},
   nez:        {label:"Rinçage nez", emoji:"👃",color:C.sky,     bg:C.skyLight,icon:"wind"},
   bath:       {label:"Bain",        emoji:"🛁",color:C.sky,     bg:C.skyLight,icon:"bath"},
@@ -447,7 +447,7 @@ function TodayStats({entries,onEdit,onDelete,onAdd,simple}){
   const lastPoo=latest(["diaper_poo","diaper_both"]);
   const lastW=latest(["weight"]);
   const nightMin=calcNightDuration(entries);
-  const{vitDone}=checkMorningSoins(entries);
+  const{vitDone,probioticDone}=checkMorningSoins(entries);
   const open=(cats,title)=>()=>setMiniJournal({cats,title});
   // L'anneau se remplit en 3 heures depuis la dernière tétée
   const ring=lastFeed?Math.min((now-new Date(lastFeed.ts))/(180*60000),1):0;
@@ -470,12 +470,18 @@ function TodayStats({entries,onEdit,onDelete,onAdd,simple}){
       </div>
     </div>
 
-    {/* Vitamines du jour */}
-    <button className="tap" onClick={()=>vitDone?setMiniJournal({cats:["vitamin"],title:"Vitamines"}):onAdd("vitamin")} style={{border:"none",borderRadius:18,padding:"12px 16px",cursor:"pointer",background:vitDone?C.sageLight:C.surface,boxShadow:vitDone?"none":C.shadow,display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
-      <CatChip cat="vitamin" size={36} radius={12}/>
-      <span style={{flex:1,fontSize:15,fontWeight:800,color:C.text}}>Vitamines du jour</span>
-      <span style={{fontSize:13,fontWeight:900,color:vitDone?C.sage:C.red,background:vitDone?"var(--chip)":C.redLight,borderRadius:999,padding:"4px 10px"}}>{vitDone?"✓ Données":"À donner"}</span>
-    </button>
+    {/* Soins du jour : vitamines et probiotique */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+      {[{cat:"vitamin",done:vitDone,ok:"✓ Données"},{cat:"probiotic",done:probioticDone,ok:"✓ Donné"}].map(({cat,done,ok})=>(
+        <button key={cat} className="tap" aria-label={`${CATS[cat].label} du jour`} onClick={()=>done?setMiniJournal({cats:[cat],title:CATS[cat].label}):onAdd(cat)} style={{border:"none",borderRadius:18,padding:"12px",cursor:"pointer",background:done?CATS[cat].bg:C.surface,boxShadow:done?"none":C.shadow,display:"flex",alignItems:"center",gap:10,textAlign:"left",minWidth:0}}>
+          <CatChip cat={cat} size={36} radius={12}/>
+          <span style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}>
+            <span style={{fontSize:14,fontWeight:800,color:C.text}}>{CATS[cat].label}</span>
+            <span style={{alignSelf:"flex-start",fontSize:12,fontWeight:900,color:done?CATS[cat].color:C.red,background:done?"var(--chip)":C.redLight,borderRadius:999,padding:"2px 8px"}}>{done?ok:"À donner"}</span>
+          </span>
+        </button>
+      ))}
+    </div>
 
     {/* Dernières 24h */}
     <div>
@@ -1145,7 +1151,7 @@ function App(){
   const BIBERON={cat:"feed",label:"Biberon",icon:"bottle",preset:{side:"Biberon"}};
   const QUICK=[
     {cat:"feed"},BIBERON,{cat:"diaper_wet"},{cat:"diaper_poo"},
-    {cat:"diaper_both"},{cat:"sleep"},{cat:"vitamin"},{cat:"pump"},
+    {cat:"diaper_both"},{cat:"sleep"},{cat:"vitamin"},{cat:"probiotic"},{cat:"pump"},
     {cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"nez"},
     {cat:"note"},
   ];
@@ -1156,6 +1162,7 @@ function App(){
     {cat:"diaper_wet"},
     {cat:"diaper_both"},
     {cat:"vitamin"},
+    {cat:"probiotic"},
   ];
   const TABS=[["home","Accueil"],["journal","Journal"],["stats","Stats"],["weight","Courbe"],["settings","Réglages"]].filter(([t])=>!simple||t!=="stats"&&t!=="weight");
   const SIMPLE_CATS=["vitamin","bath","mood","note","nombril","nez","probiotic"];
