@@ -155,6 +155,20 @@ function calcNightDuration(allEntries){
   const we1=new Date(we0);we1.setDate(we1.getDate()-1);
   return longestPause(ws1,we1);
 }
+function lastNights(allEntries,n=7){
+  const now=new Date();
+  const ws0=new Date(now);ws0.setHours(20,0,0,0);if(ws0>now)ws0.setDate(ws0.getDate()-1);
+  const nights=[];
+  for(let k=0;k<n;k++){
+    const ws=new Date(ws0);ws.setDate(ws.getDate()-k);
+    const we=new Date(ws);we.setDate(we.getDate()+1);we.setHours(11,0,0,0);
+    const inW=allEntries.filter(e=>{const t=new Date(e.ts);return t>=ws&&t<=we;}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+    let best=null;
+    for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(!best||g>best.dur)best={dur:g,start:inW[i-1].ts,end:inW[i].ts};}
+    nights.push({ws,we,inProgress:now<we,feeds:groupFeeds(inW).length,...(best&&best.dur>=60?{dur:Math.round(best.dur),start:best.start,end:best.end}:{})});
+  }
+  return nights;
+}
 
 // Icônes au trait (dessinées pour l'app)
 const ICON_PATHS={
@@ -429,6 +443,7 @@ function StatTile({icon,label,value,sub,color,bg,onClick}){
 function TodayStats({entries,onEdit,onDelete,onAdd,simple}){
   const[,setTick]=useState(0);
   const[miniJournal,setMiniJournal]=useState(null);
+  const[showNights,setShowNights]=useState(false);
   useEffect(()=>{
     function onVisible(){if(document.visibilityState==="visible")setTick(t=>t+1);}
     document.addEventListener("visibilitychange",onVisible);
@@ -490,11 +505,12 @@ function TodayStats({entries,onEdit,onDelete,onAdd,simple}){
         <StatTile icon="baby" label="Tétées" value={feedSessions.length} sub={lastFeed?timeAgo(lastFeed.ts):null} color={C.accent} bg={C.accentLight} onClick={open(["feed"],"Allaitements")}/>
         <StatTile icon="drop" label="Pipi" value={wet} sub={lastWet?timeAgo(lastWet.ts):null} color={C.sky} bg={C.skyLight} onClick={open(["diaper_wet","diaper_both"],"Pipi")}/>
         <StatTile icon="poo" label="Caca" value={poo} sub={lastPoo?timeAgo(lastPoo.ts):null} color={C.golden} bg={C.goldenLight} onClick={open(["diaper_poo","diaper_both"],"Caca")}/>      </div>
-      {!simple&&<div style={{display:"grid",gridTemplateColumns:lastW?"1fr 1fr":"1fr",gap:8,marginTop:8}}>
-        <StatTile icon="moon" label="Plus longue nuit" value={nightMin?durLabel(nightMin):"—"} color={C.lavender} bg={C.lavenderLight}/>
-        {lastW&&<StatTile icon="scale" label="Dernier poids" value={`${lastW.weight} kg`} sub={fmtDate(lastW.ts)} color={C.sage} bg={C.sageLight} onClick={open(["weight"],"Poids")}/>}
-      </div>}
+      <div style={{display:"grid",gridTemplateColumns:!simple&&lastW?"1fr 1fr":"1fr",gap:8,marginTop:8}}>
+        <StatTile icon="moon" label="Plus longue nuit" value={nightMin?durLabel(nightMin):"—"} sub="Voir les dernières nuits" color={C.lavender} bg={C.lavenderLight} onClick={()=>setShowNights(true)}/>
+        {!simple&&lastW&&<StatTile icon="scale" label="Dernier poids" value={`${lastW.weight} kg`} sub={fmtDate(lastW.ts)} color={C.sage} bg={C.sageLight} onClick={open(["weight"],"Poids")}/>}
+      </div>
     </div>
+    {showNights&&<NightsSheet entries={entries} onClose={()=>setShowNights(false)}/>}
     {miniJournal&&<MiniJournal entries={entries} cats={miniJournal.cats} title={miniJournal.title} onClose={()=>setMiniJournal(null)} onEdit={onEdit} onDelete={onDelete}/>}
   </div>);
 }
@@ -531,6 +547,36 @@ function AllTimeTotals({entries}){
       {others.map(({k,n})=>(<span key={k} style={{background:C.bg,borderRadius:999,padding:"6px 10px 6px 8px",fontSize:12,fontWeight:700,display:"inline-flex",alignItems:"center",gap:6}}><span style={{color:CATS[k].color}}><Icon name={CATS[k].icon} size={15}/></span>{CATS[k].label} <strong style={{fontWeight:800}}>{n}</strong></span>))}
     </div>}
   </Card>);
+}
+
+function NightsSheet({entries,onClose}){
+  const nights=lastNights(entries,7);
+  const known=nights.filter(n=>n.dur);
+  const max=Math.max(...known.map(n=>n.dur),1);
+  const avg=known.length?Math.round(known.reduce((t,n)=>t+n.dur,0)/known.length):null;
+  const best=known.reduce((b,n)=>!b||n.dur>b.dur?n:b,null);
+  const label=n=>{const a=n.ws.toLocaleDateString("fr-CH",n.ws.getMonth()===n.we.getMonth()?{day:"numeric"}:{day:"numeric",month:"short"}),b=n.we.toLocaleDateString("fr-CH",{day:"numeric",month:"short"});return`Nuit du ${a} au ${b}`;};
+  return(<Sheet title="Dernières nuits" onClose={onClose}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+      <StatTile icon="moon" label="Moyenne" value={avg?durLabel(avg):"—"} sub={`${known.length} nuit${known.length>1?"s":""} sur 7`} color={C.lavender} bg={C.lavenderLight}/>
+      <StatTile icon="up" label="Meilleure nuit" value={best?durLabel(best.dur):"—"} sub={best?label(best):null} color={C.sage} bg={C.sageLight}/>
+    </div>
+    <Card style={{overflow:"hidden"}}>
+      {nights.map((n,i)=>(<div key={i} style={{padding:"13px 16px",borderBottom:i===nights.length-1?"none":`1px solid ${C.bg}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+          <span style={{fontSize:14,fontWeight:800}}>{label(n)}{n.inProgress&&<span style={{fontSize:11,fontWeight:800,color:C.lavender,marginLeft:6}}>en cours</span>}</span>
+          <span style={{fontSize:18,fontWeight:900,color:n.dur?C.lavender:C.muted,whiteSpace:"nowrap"}}>{n.dur?durLabel(n.dur):"—"}</span>
+        </div>
+        <div style={{height:6,borderRadius:3,background:C.lavenderLight,margin:"8px 0 6px",overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${n.dur?Math.max(n.dur/max*100,4):0}%`,background:C.lavender,borderRadius:3,transition:"width .5s ease"}}/>
+        </div>
+        <div style={{fontSize:12,fontWeight:600,color:C.muted}}>
+          {n.dur?`${fmtTime(n.start)} → ${fmtTime(n.end)}`:"Pas assez d'entrées"}{n.feeds>0?` · ${n.feeds} tétée${n.feeds>1?"s":""} entre 20h et 11h`:""}
+        </div>
+      </div>))}
+    </Card>
+    <div style={{fontSize:12,color:C.muted,fontWeight:600,lineHeight:1.4,margin:"12px 4px 0"}}>Durée = plus longue période sans aucune entrée entre 20h et 11h.</div>
+  </Sheet>);
 }
 
 function Journal({entries,onDelete,onEdit}){
@@ -1161,8 +1207,6 @@ function App(){
     BIBERON,
     {cat:"diaper_wet"},
     {cat:"diaper_both"},
-    {cat:"vitamin"},
-    {cat:"probiotic"},
   ];
   const TABS=[["home","Accueil"],["journal","Journal"],["stats","Stats"],["weight","Courbe"],["settings","Réglages"]].filter(([t])=>!simple||t!=="stats"&&t!=="weight");
   const SIMPLE_CATS=["vitamin","bath","mood","note","nombril","nez","probiotic"];
