@@ -165,7 +165,10 @@ function lastNights(allEntries,n=7){
     const inW=allEntries.filter(e=>{const t=new Date(e.ts);return t>=ws&&t<=we;}).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
     let best=null;
     for(let i=1;i<inW.length;i++){const g=(new Date(inW[i].ts)-new Date(inW[i-1].ts))/60000;if(!best||g>best.dur)best={dur:g,start:inW[i-1].ts,end:inW[i].ts};}
-    nights.push({ws,we,inProgress:now<we,feeds:groupFeeds(inW).length,...(best&&best.dur>=60?{dur:Math.round(best.dur),start:best.start,end:best.end}:{})});
+    const n22=new Date(ws);n22.setHours(22,0,0,0);
+    const n6=new Date(we);n6.setHours(6,0,0,0);
+    const nightFeeds=groupFeeds(inW.filter(e=>{const t=new Date(e.ts);return t>=n22&&t<n6;})).map(e=>e.ts);
+    nights.push({ws,we,inProgress:now<we,nightFeeds,...(best&&best.dur>=60?{dur:Math.round(best.dur),start:best.start,end:best.end}:{})});
   }
   return nights;
 }
@@ -570,12 +573,13 @@ function NightsSheet({entries,onClose}){
         <div style={{height:6,borderRadius:3,background:C.lavenderLight,margin:"8px 0 6px",overflow:"hidden"}}>
           <div style={{height:"100%",width:`${n.dur?Math.max(n.dur/max*100,4):0}%`,background:C.lavender,borderRadius:3,transition:"width .5s ease"}}/>
         </div>
-        <div style={{fontSize:12,fontWeight:600,color:C.muted}}>
-          {n.dur?`${fmtTime(n.start)} → ${fmtTime(n.end)}`:"Pas assez d'entrées"}{n.feeds>0?` · ${n.feeds} tétée${n.feeds>1?"s":""} entre 20h et 11h`:""}
+        <div style={{fontSize:12,fontWeight:600,color:C.muted,lineHeight:1.5}}>
+          <div>{n.dur?<>Sans réveil de <strong style={{color:C.text}}>{fmtTime(n.start)}</strong> à <strong style={{color:C.text}}>{fmtTime(n.end)}</strong></>:"Pas assez d'entrées"}</div>
+          <div>Tétées de nuit (22h–6h) : {n.nightFeeds.length?<strong style={{color:C.accent}}>{n.nightFeeds.length} · {n.nightFeeds.map(fmtTime).join(", ")}</strong>:<strong style={{color:C.sage}}>aucune</strong>}</div>
         </div>
       </div>))}
     </Card>
-    <div style={{fontSize:12,color:C.muted,fontWeight:600,lineHeight:1.4,margin:"12px 4px 0"}}>Durée = plus longue période sans aucune entrée entre 20h et 11h.</div>
+    <div style={{fontSize:12,color:C.muted,fontWeight:600,lineHeight:1.4,margin:"12px 4px 0"}}>Durée = plus longue période sans aucune entrée (tétée, couche…) entre 20h et 11h.</div>
   </Sheet>);
 }
 
