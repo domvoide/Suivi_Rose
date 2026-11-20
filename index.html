@@ -17,9 +17,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <style>
-:root,.light-theme{color-scheme:light;--bg:#FFF5F7;--surface:#FFFFFF;--text:#2B1520;--muted:#8C6B79;--border:#F3DFE6;--accentL:#FDE3EA;--sageL:#D8F3E7;--lavL:#ECE5FF;--skyL:#E0ECFE;--goldL:#FDEFD6;--redL:#FDE3E3;--tealL:#D3F4EF;--neutralL:#F8ECF0;--glass:rgba(255,245,247,.8);--hairline:rgba(43,21,32,.07);--nav:rgba(74,22,48,.92);--press:#FDEEF2;--chip:rgba(255,255,255,.7);--track:rgba(43,21,32,.06);--glow1:rgba(236,91,126,.20);--glow2:rgba(255,158,128,.18);--shadow:0 1px 2px rgba(60,20,40,.04),0 8px 24px -10px rgba(60,20,40,.14);--shadowLg:0 2px 4px rgba(60,20,40,.05),0 18px 40px -14px rgba(60,20,40,.25);;--hero:linear-gradient(150deg,#F47D9C 0%,#E4557F 55%,#CC3D6C 100%);--heroShadow:0 22px 44px -20px rgba(204,61,108,.7);--heroGlow1:rgba(255,255,255,.28);--heroGlow2:rgba(255,190,150,.45);--ring:#FFFFFF;--avatar:linear-gradient(135deg,#FFA3B9,#E4557F)}
-@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0F0C1A;--surface:#1B1729;--text:#F3F1FA;--muted:#9D98B6;--border:#2D2842;--accentL:rgba(236,91,126,.17);--sageL:rgba(31,169,113,.17);--lavL:rgba(134,98,240,.2);--skyL:rgba(62,132,240,.18);--goldL:rgba(240,162,46,.17);--redL:rgba(229,72,77,.18);--tealL:rgba(20,168,154,.18);--neutralL:rgba(255,255,255,.07);--glass:rgba(15,12,26,.72);--hairline:rgba(255,255,255,.07);--nav:rgba(40,34,64,.88);--press:rgba(255,255,255,.04);--chip:rgba(255,255,255,.08);--track:rgba(255,255,255,.08);--glow1:rgba(236,91,126,.13);--glow2:rgba(134,98,240,.16);--shadow:0 10px 26px -14px rgba(0,0,0,.7);--shadowLg:0 20px 44px -16px rgba(0,0,0,.8);;--hero:linear-gradient(150deg,#2E2557 0%,#1C1633 72%);--heroShadow:0 22px 44px -20px rgba(0,0,0,.8);--heroGlow1:rgba(236,91,126,.55);--heroGlow2:rgba(134,98,240,.4);--ring:#FF7C9C;--avatar:linear-gradient(135deg,#FF8FAB,#8662F0)}}
-@media print{:root{color-scheme:light;--bg:#FFF5F7;--surface:#FFFFFF;--text:#2B1520;--muted:#8C6B79;--border:#F3DFE6;--accentL:#FDE3EA;--sageL:#D8F3E7;--lavL:#ECE5FF;--skyL:#E0ECFE;--goldL:#FDEFD6;--redL:#FDE3E3;--tealL:#D3F4EF;--neutralL:#F8ECF0;--glass:rgba(255,245,247,.8);--hairline:rgba(43,21,32,.07);--nav:rgba(74,22,48,.92);--press:#FDEEF2;--chip:rgba(255,255,255,.7);--track:rgba(43,21,32,.06);--glow1:rgba(236,91,126,.20);--glow2:rgba(255,158,128,.18);--shadow:0 1px 2px rgba(60,20,40,.04),0 8px 24px -10px rgba(60,20,40,.14);--shadowLg:0 2px 4px rgba(60,20,40,.05),0 18px 40px -14px rgba(60,20,40,.25);;--hero:linear-gradient(150deg,#F47D9C 0%,#E4557F 55%,#CC3D6C 100%);--heroShadow:0 22px 44px -20px rgba(204,61,108,.7);--heroGlow1:rgba(255,255,255,.28);--heroGlow2:rgba(255,190,150,.45);--ring:#FFFFFF;--avatar:linear-gradient(135deg,#FFA3B9,#E4557F)}}
+:root,.light-theme{color-scheme:light;--bg:#FFF5F7;--surface:#FFFFFF;--text:#2B1520;--muted:#8C6B79;--border:#F3DFE6;--accentL:#FDE3EA;--sageL:#D8F3E7;--lavL:#ECE5FF;--skyL:#E0ECFE;--goldL:#FDEFD6;--redL:#FDE3E3;--tealL:#D3F4EF;--peachL:#FFE8DC;--neutralL:#F8ECF0;--glass:rgba(255,245,247,.8);--hairline:rgba(43,21,32,.07);--nav:rgba(74,22,48,.92);--press:#FDEEF2;--chip:rgba(255,255,255,.7);--track:rgba(43,21,32,.06);--glow1:rgba(236,91,126,.20);--glow2:rgba(255,158,128,.18);--shadow:0 1px 2px rgba(60,20,40,.04),0 8px 24px -10px rgba(60,20,40,.14);--shadowLg:0 2px 4px rgba(60,20,40,.05),0 18px 40px -14px rgba(60,20,40,.25);;--hero:linear-gradient(150deg,#F47D9C 0%,#E4557F 55%,#CC3D6C 100%);--heroShadow:0 22px 44px -20px rgba(204,61,108,.7);--heroGlow1:rgba(255,255,255,.28);--heroGlow2:rgba(255,190,150,.45);--ring:#FFFFFF;--avatar:linear-gradient(135deg,#FFA3B9,#E4557F)}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0F0C1A;--surface:#1B1729;--text:#F3F1FA;--muted:#9D98B6;--border:#2D2842;--accentL:rgba(236,91,126,.17);--sageL:rgba(31,169,113,.17);--lavL:rgba(134,98,240,.2);--skyL:rgba(62,132,240,.18);--goldL:rgba(240,162,46,.17);--redL:rgba(229,72,77,.18);--tealL:rgba(20,168,154,.18);--peachL:rgba(240,122,62,.18);--neutralL:rgba(255,255,255,.07);--glass:rgba(15,12,26,.72);--hairline:rgba(255,255,255,.07);--nav:rgba(40,34,64,.88);--press:rgba(255,255,255,.04);--chip:rgba(255,255,255,.08);--track:rgba(255,255,255,.08);--glow1:rgba(236,91,126,.13);--glow2:rgba(134,98,240,.16);--shadow:0 10px 26px -14px rgba(0,0,0,.7);--shadowLg:0 20px 44px -16px rgba(0,0,0,.8);;--hero:linear-gradient(150deg,#2E2557 0%,#1C1633 72%);--heroShadow:0 22px 44px -20px rgba(0,0,0,.8);--heroGlow1:rgba(236,91,126,.55);--heroGlow2:rgba(134,98,240,.4);--ring:#FF7C9C;--avatar:linear-gradient(135deg,#FF8FAB,#8662F0)}}
+@media print{:root{color-scheme:light;--bg:#FFF5F7;--surface:#FFFFFF;--text:#2B1520;--muted:#8C6B79;--border:#F3DFE6;--accentL:#FDE3EA;--sageL:#D8F3E7;--lavL:#ECE5FF;--skyL:#E0ECFE;--goldL:#FDEFD6;--redL:#FDE3E3;--tealL:#D3F4EF;--peachL:#FFE8DC;--neutralL:#F8ECF0;--glass:rgba(255,245,247,.8);--hairline:rgba(43,21,32,.07);--nav:rgba(74,22,48,.92);--press:#FDEEF2;--chip:rgba(255,255,255,.7);--track:rgba(43,21,32,.06);--glow1:rgba(236,91,126,.20);--glow2:rgba(255,158,128,.18);--shadow:0 1px 2px rgba(60,20,40,.04),0 8px 24px -10px rgba(60,20,40,.14);--shadowLg:0 2px 4px rgba(60,20,40,.05),0 18px 40px -14px rgba(60,20,40,.25);;--hero:linear-gradient(150deg,#F47D9C 0%,#E4557F 55%,#CC3D6C 100%);--heroShadow:0 22px 44px -20px rgba(204,61,108,.7);--heroGlow1:rgba(255,255,255,.28);--heroGlow2:rgba(255,190,150,.45);--ring:#FFFFFF;--avatar:linear-gradient(135deg,#FFA3B9,#E4557F)}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{background:var(--bg);}
 body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;overscroll-behavior-y:none;}
@@ -62,7 +62,7 @@ function localToIso(s){return new Date(s).toISOString();}
 
 const C={bg:"var(--bg)",surface:"var(--surface)",text:"var(--text)",muted:"var(--muted)",border:"var(--border)",
   accent:"#EC5B7E",accentLight:"var(--accentL)",sage:"#1FA971",sageLight:"var(--sageL)",lavender:"#8662F0",lavenderLight:"var(--lavL)",
-  sky:"#3E84F0",skyLight:"var(--skyL)",golden:"#E8961C",goldenLight:"var(--goldL)",red:"#E5484D",redLight:"var(--redL)",teal:"#14A89A",tealLight:"var(--tealL)",
+  sky:"#3E84F0",skyLight:"var(--skyL)",golden:"#E8961C",goldenLight:"var(--goldL)",red:"#E5484D",redLight:"var(--redL)",teal:"#14A89A",tealLight:"var(--tealL)",peach:"#F07A3E",peachLight:"var(--peachL)",
   neutralLight:"var(--neutralL)",shadow:"var(--shadow)",shadowLg:"var(--shadowLg)"};
 
 const CATS={
@@ -70,6 +70,7 @@ const CATS={
   diaper_wet: {label:"Pipi",        emoji:"💧",color:C.sky,     bg:C.skyLight,icon:"drop"},
   diaper_poo: {label:"Caca",        emoji:"💩",color:C.golden,  bg:C.goldenLight,icon:"poo"},
   diaper_both:{label:"Pipi+Caca",   emoji:"💧💩",color:C.golden,bg:C.goldenLight,icon:"diaper"},
+  food:       {label:"Repas",       emoji:"🥣",color:C.peach,   bg:C.peachLight,icon:"bowl"},
   sleep:      {label:"Sommeil",     emoji:"😴",color:C.lavender,bg:C.lavenderLight,icon:"moon"},
   pump:       {label:"Tire-lait",   emoji:"🍼",color:C.accent,  bg:C.accentLight,icon:"bottle"},
   weight:     {label:"Poids",       emoji:"⚖️",color:C.sage,    bg:C.sageLight,icon:"scale"},
@@ -189,6 +190,7 @@ const ICON_PATHS={
   moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
   bottle:'<path d="M10.5 2h3l.6 3h-4.2z"/><path d="M8.5 5h7"/><path d="M9.5 5v1.2c0 .8-.3 1.6-.9 2.2l-.2.2c-.6.6-.9 1.4-.9 2.2V20a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-9.2c0-.8-.3-1.6-.9-2.2l-.2-.2c-.6-.6-.9-1.4-.9-2.2V5"/><path d="M7.5 13h3M7.5 17h3"/>',
   scale:'<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10M12 3v18M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+  bowl:'<path d="M3 11.5h18a9 8.5 0 0 1-18 0Z"/><path d="M8.5 21h7"/><path d="M14 11.5l3.6-5.2"/><ellipse cx="19" cy="4.2" rx="1.6" ry="2.4" transform="rotate(35 19 4.2)"/>',
   pill:'<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
   bacteria:'<circle cx="12" cy="12" r="6.5"/><path d="M12 5.5V2.5M12 21.5v-3M5.5 12h-3M21.5 12h-3"/><path d="M10 10.5h.01M14 13.5h.01M13.5 9.5h.01"/>',
   target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
@@ -363,6 +365,29 @@ function TempForm({onSave,initial}){
     <Btn color={C.red} onClick={()=>t&&onSave({cat:"temperature",temp:+t,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
   </Form>);
 }
+const FOOD_SUGGESTIONS=["Carotte","Courge","Patate douce","Courgette","Haricots verts","Pomme","Poire","Banane"];
+const FOOD_AMOUNTS=["Goûté","Quelques cuillères","½ pot","1 pot"];
+const FOOD_LIKED=["A adoré","Moyen","A refusé"];
+function FoodForm({onSave,initial,history}){
+  const[food,setFood]=useState(initial?.food||"");
+  const[amount,setAmount]=useState(initial?.amount||"");
+  const[liked,setLiked]=useState(initial?.liked||"");
+  const[note,setNote]=useState(initial?.note||"");
+  const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
+  // Aliments déjà donnés en premier, puis quelques idées
+  const recent=history.filter(e=>e.cat==="food"&&e.food).sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(e=>e.food);
+  const suggestions=[...new Set([...recent,...FOOD_SUGGESTIONS])].slice(0,10);
+  const toggle=(set,cur)=>v=>set(v===cur?"":v);
+  return(<Form>
+    <Inp label="Aliment" value={food} onChange={e=>setFood(e.target.value)} placeholder="ex : purée de carottes"/>
+    <div style={{marginTop:-8}}><Chips options={suggestions} value={food} onChange={setFood} color={C.peach}/></div>
+    <Chips label="Quantité" options={FOOD_AMOUNTS} value={amount} onChange={toggle(setAmount,amount)} color={C.peach}/>
+    <Chips label="Elle a aimé ?" options={FOOD_LIKED} value={liked} onChange={toggle(setLiked,liked)} color={C.peach}/>
+    <Inp label="Note" value={note} onChange={e=>setNote(e.target.value)} placeholder="optionnel (réaction, allergie…)"/>
+    <Inp label="Heure" type="datetime-local" value={ts} onChange={e=>setTs(e.target.value)}/>
+    <Btn color={C.peach} onClick={()=>onSave({cat:"food",food:food.trim()||undefined,amount:amount||undefined,liked:liked||undefined,note:note||undefined,ts:localToIso(ts)})}>{initial?"Modifier":"Enregistrer"}</Btn>
+  </Form>);
+}
 function SimpleForm({cat,color,onSave,initial}){
   const[ts,setTs]=useState(initial?isoToLocal(initial.ts):localNow());
   const[note,setNote]=useState(initial?.note||"");
@@ -386,6 +411,9 @@ function entryParts(entry){
   if(entry.pooColor)parts.push(entry.pooColor);
   if(entry.pooTex)parts.push(entry.pooTex);
   if(entry.mood)parts.push(entry.mood);
+  if(entry.food)parts.push(entry.food);
+  if(entry.amount)parts.push(entry.amount);
+  if(entry.liked)parts.push(entry.liked);
   if(entry.note)parts.push(entry.note);
   if(entry.author)parts.push(`— ${entry.author}`);
   return parts;
@@ -1205,7 +1233,7 @@ function App(){
 
   const BIBERON={cat:"feed",label:"Biberon",icon:"bottle",preset:{side:"Biberon"}};
   const QUICK=[
-    {cat:"feed"},BIBERON,{cat:"diaper_wet"},{cat:"diaper_poo"},
+    {cat:"feed"},BIBERON,{cat:"food"},{cat:"diaper_wet"},{cat:"diaper_poo"},
     {cat:"diaper_both"},{cat:"sleep"},{cat:"vitamin"},{cat:"probiotic"},{cat:"pump"},
     {cat:"weight"},{cat:"temperature"},{cat:"bath"},{cat:"nez"},
     {cat:"note"},
@@ -1216,6 +1244,7 @@ function App(){
     BIBERON,
     {cat:"diaper_wet"},
     {cat:"diaper_both"},
+    {cat:"food"},
   ];
   const TABS=[["home","Accueil"],["journal","Journal"],["stats","Stats"],["weight","Courbe"],["settings","Réglages"]].filter(([t])=>!simple||t!=="stats"&&t!=="weight");
   const SIMPLE_CATS=["vitamin","bath","mood","note","nombril","nez","probiotic"];
@@ -1298,6 +1327,7 @@ function App(){
         {mType==="sleep"&&<SleepForm onSave={handleSave} initial={mEntry}/>}
         {mType==="weight"&&<WeightForm onSave={handleSave} initial={mEntry}/>}
         {mType==="temperature"&&<TempForm onSave={handleSave} initial={mEntry}/>}
+        {mType==="food"&&<FoodForm onSave={handleSave} initial={mEntry} history={data.entries}/>}
         {SIMPLE_CATS.includes(mType)&&<SimpleForm cat={mType} color={CATS[mType].color} onSave={handleSave} initial={mEntry}/>}
       </Sheet>
     )}
